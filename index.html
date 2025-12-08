@@ -109,6 +109,16 @@ function createAsteroidPoints(size) {
 // Spawnowanie Asteroid
 function spawnAsteroid() {
   const size = 40 + Math.random() * 40;
+
+  // Część asteroid będzie leciała po lekkim łuku
+  const willCurve = Math.random() < 0.45; // ok. 45% zakrzywionych torów
+
+  let vx = 0;
+  if (willCurve) {
+    // Delikatny dryf w lewo/prawo
+    vx = (Math.random() - 0.5) * 2.4; // od -1.2 do +1.2 px na klatkę
+  }
+
   asteroids.push({
     x: Math.random() * canvas.width,
     y: -50,
@@ -116,7 +126,8 @@ function spawnAsteroid() {
     speed: (4 + Math.random() * 4) * gameSpeedMultiplier,
     points: createAsteroidPoints(size),
     angle: Math.random() * Math.PI * 2,
-    rotationSpeed: (Math.random() - 0.5) * 0.02
+    rotationSpeed: (Math.random() - 0.5) * 0.02,
+    vx: vx // NOWOŚĆ: pozioma prędkość
   });
 }
 setInterval(spawnAsteroid, 600); 
@@ -516,7 +527,10 @@ function update() {
   // 5. Asteroidy
   for (let i = asteroids.length - 1; i >= 0; i--) {
     const a = asteroids[i];
+
+    // Ruch w dół + ewentualny poziomy dryf
     a.y += a.speed;
+    a.x += a.vx || 0;
     a.angle += a.rotationSpeed;
 
     // Kolizja z graczem
@@ -530,7 +544,14 @@ function update() {
 
     drawAsteroid(a);
 
-    if (a.y > canvas.height + 100) asteroids.splice(i, 1);
+    // Usuwanie asteroid poza ekranem (także po bokach, z marginesem)
+    if (
+      a.y > canvas.height + 100 ||
+      a.x < -100 ||
+      a.x > canvas.width + 100
+    ) {
+      asteroids.splice(i, 1);
+    }
   }
 
   // 6. Hot Dogi (zbieranie)
