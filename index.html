@@ -57,10 +57,62 @@
       border-color: #fff;
       font-weight: bold;
     }
+  
+    #lang-overlay {
+      position: fixed;
+      inset: 0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: rgba(0, 0, 0, 0.7);
+      z-index: 20;
+      font-family: Arial, sans-serif;
+    }
+    .lang-panel {
+      background: rgba(10, 10, 30, 0.95);
+      padding: 24px 32px;
+      border-radius: 16px;
+      text-align: center;
+      color: #ffffff;
+      max-width: 90%;
+      box-shadow: 0 0 20px rgba(0,0,0,0.7);
+    }
+    .lang-panel h1 {
+      margin: 0 0 16px;
+      font-size: 26px;
+    }
+    .lang-panel p {
+      margin: 8px 0;
+      font-size: 14px;
+      opacity: 0.85;
+    }
+    .lang-buttons {
+      margin-top: 12px;
+      margin-bottom: 8px;
+    }
+    .lang-buttons button {
+      margin: 0 10px;
+      padding: 10px 22px;
+      font-size: 18px;
+      border-radius: 999px;
+      border: 1px solid #ffffff;
+      background: rgba(255, 255, 255, 0.12);
+      color: #ffffff;
+      cursor: pointer;
+    }
+    .lang-buttons button:hover {
+      background: rgba(255, 255, 255, 0.25);
+    }
+    .lang-panel .hint {
+      font-size: 12px;
+      opacity: 0.7;
+      margin-top: 14px;
+    }
+
   </style>
 </head>
 
-<body onload="startGame()">
+<body>
 
   <!-- AUTO-CACHE-BYPASS -->
   <script>
@@ -76,13 +128,23 @@
   </script>
 
   <!-- LANGUAGE SWITCH UI -->
-  <div id="lang-switch">
-    <span>Język / Language:</span>
-    <button id="btn-pl" onclick="setLanguage('pl')">PL</button>
-    <button id="btn-en" onclick="setLanguage('en')">EN</button>
+  
+
+  
+  <div id="lang-overlay">
+    <div class="lang-panel">
+      <h1>Wybierz język / Choose language</h1>
+      <p>Pick a language to start the game.</p>
+      <div class="lang-buttons">
+        <button onclick="startGame('pl')">Polski (PL)</button>
+        <button onclick="startGame('en')">English (EN)</button>
+      </div>
+      <p class="hint">Dotknij lub kliknij przycisk, aby rozpocząć / Tap or click to start.</p>
+    </div>
   </div>
 
   <canvas id="game"></canvas>
+
 
   <script>
     /* ==========================================
@@ -219,20 +281,38 @@
     };
 
     let currentLang = "pl";
+    let gameStarted = false;
 
     function setLanguage(lang) {
       currentLang = lang;
-      document.getElementById("btn-pl").classList.toggle("active", lang === "pl");
-      document.getElementById("btn-en").classList.toggle("active", lang === "en");
+      const btnPl = document.getElementById("btn-pl");
+      const btnEn = document.getElementById("btn-en");
+      if (btnPl && btnEn) {
+        btnPl.classList.toggle("active", lang === "pl");
+        btnEn.classList.toggle("active", lang === "en");
+      }
     }
 
     /* ==========================================
        GAME INITIALIZATION
     ========================================== */
 
-    function startGame() {
-      setLanguage(currentLang);
-      update();  /* <-- Start main game loop */
+    function startGame(lang) {
+      if (gameStarted) return;
+      gameStarted = true;
+
+      if (lang) {
+        setLanguage(lang);
+      } else {
+        setLanguage(currentLang);
+      }
+
+      const overlay = document.getElementById("lang-overlay");
+      if (overlay) {
+        overlay.style.display = "none";
+      }
+
+      update();
     }
 
     /* ==========================================
