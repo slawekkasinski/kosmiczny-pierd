@@ -809,51 +809,62 @@ function wrapText(ctx, text, maxWidth) {
   return lines;
 }
 
+
 function drawBossSpeech() {
   if (!boss || bossSpeech.timer <= 0 || !bossSpeech.text) return;
 
   ctx.save();
   ctx.font = "24px Arial";
   const padding = 12;
-  const maxWidth = 480;
+  const maxWidth = 380;
+
   const lines = wrapText(ctx, bossSpeech.text, maxWidth);
+
   const boxWidth =
-    Math.max(...lines.map(line => ctx.measureText(line).width)) +
-    padding * 2;
+    Math.max(...lines.map(line => ctx.measureText(line).width)) + padding * 2;
   const boxHeight = lines.length * 32 + padding * 2;
 
-  let x = boss.x - boxWidth / 2;
-  let y = boss.y - boss.size - boxHeight - 20;
-  if (y < 10) y = 10;
+  let x = boss.x + boss.size + 30;
+  let y = boss.y - boxHeight / 2;
 
-  ctx.fillStyle = "rgba(20, 0, 40, 0.9)";
+  if (x + boxWidth > canvas.width - 20) {
+    x = boss.x - boss.size - boxWidth - 30;
+  }
+
+  if (y < 20) y = 20;
+  if (y + boxHeight > canvas.height - 20) {
+    y = canvas.height - boxHeight - 20;
+  }
+
+  ctx.fillStyle = "rgba(20, 0, 40, 1.0)";
   ctx.strokeStyle = "#ff99ff";
   ctx.lineWidth = 3;
 
   const r = 16;
   ctx.beginPath();
-  ctx.moveTo(x+r, y);
-  ctx.lineTo(x+boxWidth-r, y);
-  ctx.quadraticCurveTo(x+boxWidth, y, x+boxWidth, y+r);
-  ctx.lineTo(x+boxWidth, y+boxHeight-r);
-  ctx.quadraticCurveTo(x+boxWidth, y+boxHeight, x+boxWidth-r, y+boxHeight);
-  ctx.lineTo(x+r, y+boxHeight);
-  ctx.quadraticCurveTo(x, y+boxHeight, x, y+boxHeight-r);
-  ctx.lineTo(x, y+r);
-  ctx.quadraticCurveTo(x, y, x+r, y);
+  ctx.moveTo(x + r, y);
+  ctx.lineTo(x + boxWidth - r, y);
+  ctx.quadraticCurveTo(x + boxWidth, y, x + boxWidth, y + r);
+  ctx.lineTo(x + boxWidth, y + boxHeight - r);
+  ctx.quadraticCurveTo(x + boxWidth, y + boxHeight, x + boxWidth - r, y + boxHeight);
+  ctx.lineTo(x + r, y + boxHeight);
+  ctx.quadraticCurveTo(x, y + boxHeight, x, y + boxHeight - r);
+  ctx.lineTo(x, y + r);
+  ctx.quadraticCurveTo(x, y, x + r, y);
   ctx.closePath();
+
   ctx.fill();
   ctx.stroke();
 
-  ctx.fillStyle = "#fff";
-  ctx.textAlign = "center";
+  ctx.fillStyle = "#ffffff";
+  ctx.textAlign = "left";
+
   for (let i = 0; i < lines.length; i++) {
-    ctx.fillText(lines[i], x + boxWidth / 2, y + padding + i * 32);
+    ctx.fillText(lines[i], x + padding, y + padding + i * 32);
   }
 
   ctx.restore();
 }
-
 /* ==========================================
    BOSS HEALTH BAR
 ========================================== */
@@ -1030,6 +1041,31 @@ function drawBossExplosion() {
 /* ==========================================
    MAIN UPDATE LOOP
 ========================================== */
+
+
+function drawFireButton() {
+  if (!player.hasLaserGun) return;
+
+  const r = 50;
+  const fx = canvas.width - 90;
+  const fy = canvas.height - 100;
+
+  ctx.save();
+  ctx.beginPath();
+  ctx.arc(fx, fy, r, 0, Math.PI * 2);
+  ctx.fillStyle = "rgba(0, 0, 0, 0.6)";
+  ctx.fill();
+  ctx.lineWidth = 4;
+  ctx.strokeStyle = "lime";
+  ctx.stroke();
+
+  ctx.font = "18px Arial";
+  ctx.fillStyle = "#ffffff";
+  ctx.textAlign = "center";
+  ctx.textBaseline = "middle";
+  ctx.fillText("FIRE", fx, fy);
+  ctx.restore();
+}
 
 function update() {
   ctx.clearRect(0, 0, canvas.width, canvas.height);
@@ -1226,10 +1262,10 @@ function update() {
     canvas.width - 20, 80);
 
   if (player.hasLaserGun) {
-    ctx.font = "20px Arial";
+    ctx.font = "18px Arial";
     ctx.fillStyle = "lime";
     ctx.textAlign = "center";
-    ctx.fillText(ui.laserMsg, canvas.width / 2, 120);
+    ctx.fillText(ui.laserMsg, canvas.width / 2, canvas.height - 40);
   }
 
   const difficulty = Math.floor(getDifficultyFactor());
@@ -1239,7 +1275,11 @@ function update() {
   ctx.fillText(`${ui.difficultyLabel}: ${difficulty}`, canvas.width/2, 150);
 
 
-  /* === PLAYER SPEECH === */
+  
+  // Mobile FIRE button
+  drawFireButton();
+
+/* === PLAYER SPEECH === */
 
   if (speechTimer > 0) {
     drawSpeechBubble();
