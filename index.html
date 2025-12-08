@@ -1,8 +1,8 @@
 <!DOCTYPE html>
-<html lang="pl">
+<html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <title>Gra: Kosmiczny Latający Kosmonauta – Przedwieczny 2.0</title>
+  <title>Space Fart: The Ancient One</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <style>
     body {
@@ -23,7 +23,7 @@
   <canvas id="game"></canvas>
   <script>
 
-// --- KONFIGURACJA PODSTAWOWA ---
+// === CORE SETUP ===
 const canvas = document.getElementById("game");
 const ctx = canvas.getContext("2d");
 canvas.width = window.innerWidth;
@@ -33,7 +33,7 @@ let timeScore = 0;
 let gameSpeedMultiplier = 1.0;
 let asteroidKills = 0;
 
-// Obiekt gracza
+// Player object
 const player = {
   x: canvas.width / 2,
   y: canvas.height - 120,
@@ -45,49 +45,45 @@ const player = {
   hasLaserGun: false
 };
 
-// Asteroidy
+// Asteroids, bullets, hotdogs
 const asteroids = [];
-
-// Pociski
 const bullets = [];
 const bulletSpeed = 8;
-
-// Hot Dogi
 const hotdogs = [];
 
-// Sterowanie
+// Controls
 let left = false, right = false, shooting = false;
 
-// Progresja
+// Progression
 let bossesDefeated = 0;
-let bossPhase = 0;        // 0 - brak, 1 - pierwszy boss, 2 - drugi boss
+let bossPhase = 0;        // 0 - none, 1 - first boss, 2 - second boss
 let boss2Spawned = false;
 
-// Teksty astronauty
+// Astronaut phrases (EN)
 const peePhrases = [
-  "Trzeba nie było pić tyle Tatry.",
-  "Chyba przeziębiłem pęcherz...",
-  "Za dużo kawy przed lotem.",
-  "Czy w kosmosie też są toalety?",
-  "NASA by mnie nie wzięła z takim pęcherzem.",
-  "Kto projektował skafander bez zamka?!",
-  "To wszystko przez tę colę przed startem.",
-  "Czy ktoś widział kosmiczny toi-toi?",
-  "Następnym razem lecę z pampersami.",
-  "Nie przewidzieli tego w symulatorze..."
+  "Shouldn't have drunk all that beer...",
+  "My bladder is gonna explode!",
+  "Next time I'm peeing before launch.",
+  "Is there a toilet in this galaxy?",
+  "NASA would never hire this bladder.",
+  "Whose idea was a suit with no zipper?!",
+  "Too much cola before take-off...",
+  "Anyone seen a space porta-potty?",
+  "Next mission: diapers only.",
+  "They never simulated THIS in training..."
 ];
 
 const fartPhrases = [
-  "To nie ja, to grawitacja!",
-  "To na pewno efekt uboczny hot doga.",
-  "Oby nikt tego nie nagrywał.",
-  "Asteroidy, uciekajcie przed gazem!",
-  "Przynajmniej jest dodatkowy ciąg.",
-  "Ekologiczny napęd: zero emisji... prawie.",
-  "To nie bąk, to manewr korekcyjny.",
-  "Tak pachnie prawdziwa odwaga.",
-  "Czy to się liczy jako broń chemiczna?",
-  "Czuję, że kombinezon tego nie wytrzyma."
+  "That wasn't a thruster, I swear!",
+  "Side effect of that hot dog...",
+  "I hope no one recorded that.",
+  "Asteroids, fear my gas!",
+  "At least it's eco-friendly thrust.",
+  "It's not a fart, it's a maneuver!",
+  "That's the smell of bravery.",
+  "Is this considered chemical warfare?",
+  "Spacesuit integrity: highly questionable.",
+  "Warning: toxic exhaust engaged."
 ];
 
 let speech = {
@@ -97,7 +93,7 @@ let speech = {
 };
 let speechTimer = 0;
 
-// --- BOSS: PRZEDWIECZNY ---
+// === BOSS: THE ANCIENT ONE ===
 let boss = null;
 let inBossFight = false;
 let bossSpawned = false;
@@ -107,32 +103,32 @@ let bossExplosionTimer = 0;
 let bossAnimPhase = 0;
 
 const bossIntroPhrases = [
-  "Śmiertelniku, nie powinno cię tu być...",
-  "Przyzwałeś mnie swoim smrodem.",
-  "Twoje gazy naruszyły pradawny porządek.",
-  "Przedwieczny nadchodzi po twoją bańkę!",
-  "Od eonów nie czułem takiej woni..."
+  "Mortal, you should not be here...",
+  "Your stench has awakened me.",
+  "Your gases disturb the ancient order.",
+  "The Ancient One comes for your helmet!",
+  "For eons I've not smelled something like this..."
 ];
 
 const bossHitPhrases = [
-  "O, nie, tylko nie SUPER PIERDNIĘCIE LASEROWE!",
-  "Ała, moje macki kosmiczne!",
-  "Kto pozwolił ci na taką broń?!",
-  "Zgłoszę to do kosmicznego BDO!",
-  "To niezgodne z regulaminem wszechświata!",
-  "Przysięgam, że to zapamiętam, humanoidzie!",
-  "Czy ty wiesz, ile kosztuje moja regeneracja?",
-  "Zaraz zadzwonię po prawnika z innego wymiaru!",
-  "Twoje pierdnięcia naruszają strukturę czasoprzestrzeni!",
-  "To będzie w raporcie do Rady Przedwiecznych!"
+  "No, not the LASER FART!",
+  "My cosmic tentacles!",
+  "Who allowed you such a weapon?!",
+  "I'll report this to Galactic Authorities!",
+  "This violates the laws of the universe!",
+  "I will remember this, human!",
+  "Do you know how much regeneration costs?!",
+  "I'll call a lawyer from another dimension!",
+  "Your farts distort space-time!",
+  "This goes straight into the Elder Gods report!"
 ];
 
 const bossDeathPhrases = [
-  "To... jeszcze... nie koniec...",
-  "Powrócę w twoich najgorszych koszmarach...",
-  "Twoje gazy mnie pokonały... niemożliwe...",
-  "Kto by pomyślał... że zginiem od pierda...",
-  "Zostawili mnie... na pastwę twojego pęcherza..."
+  "This... is not... the end...",
+  "I'll return in your worst nightmares...",
+  "Defeated... by your gases... impossible...",
+  "Who knew I'd fall to a fart...",
+  "Abandoned... to your bladder's mercy..."
 ];
 
 let bossSpeech = {
@@ -163,10 +159,11 @@ function spawnBoss(phase) {
   bossAnimPhase = 0;
 
   const intro = bossIntroPhrases[Math.floor(Math.random() * bossIntroPhrases.length)];
-  setBossSpeech(phase === 1 ? intro : intro + " (druga forma!)", 180);
+  const suffix = phase === 2 ? " (second form!)" : "";
+  setBossSpeech(intro + suffix, 180);
 }
 
-// --- FUNKCJE POMOCNICZE ---
+// === HELPERS ===
 function createAsteroidPoints(size) {
   const points = [];
   const numPoints = 8 + Math.floor(Math.random() * 5);
@@ -181,25 +178,21 @@ function createAsteroidPoints(size) {
   return points;
 }
 
-// Ogólny mnożnik trudności (czas + pokonani bossowie)
+// Global difficulty factor based on time and defeated bosses
 function getDifficultyFactor() {
-  const t = timeScore;   // w sekundach
-  const timeFactor = 1 + t / 60;  // co minutę +1
+  const t = timeScore;   // seconds
+  const timeFactor = 1 + t / 60;  // +1 every minute
   const bossFactor = 1 + bossesDefeated * 0.7;
   return timeFactor * bossFactor;
 }
 
-// Spawnowanie Asteroid – część leci po wyraźniejszym łuku, rosnąca trudność
+// Spawn asteroids (curved trajectories, difficulty scaling)
 function spawnAsteroid() {
-  // Podczas walki z bossem normalne asteroidy NIE spadają
-  if (inBossFight) return;
+  if (inBossFight) return; // no random asteroids during boss fights
 
   const diff = getDifficultyFactor();
 
-  // szansa na zakrzywioną: rośnie z trudnością
   const willCurve = Math.random() < Math.min(0.4 + diff * 0.1, 0.9);
-
-  // szansa na super-asteroidę po pierwszym bossie
   const isSuper = (bossesDefeated > 0) && Math.random() < 0.15;
 
   let size = 40 + Math.random() * 40;
@@ -209,7 +202,7 @@ function spawnAsteroid() {
 
   let vx = 0;
   if (willCurve) {
-    const baseRange = 4.0 * (1 + 0.2 * diff); // im później, tym mocniejszy łuk
+    const baseRange = 4.0 * (1 + 0.2 * diff);
     vx = (Math.random() - 0.5) * baseRange;
   }
 
@@ -230,7 +223,7 @@ function spawnAsteroid() {
 }
 setInterval(spawnAsteroid, 600);
 
-// Spawnowanie Hot Doga – podczas walki z bossem częściej
+// Spawn hotdogs (more during boss fights)
 function spawnHotDog() {
   const baseHotdog = {
     x: Math.random() * (canvas.width - 60) + 30,
@@ -240,13 +233,12 @@ function spawnHotDog() {
   };
   hotdogs.push({ ...baseHotdog });
   if (inBossFight) {
-    // dodatkowe hot-dogi w trakcie walki
     hotdogs.push({ ...baseHotdog, x: Math.random() * (canvas.width - 60) + 30 });
   }
 }
 setInterval(spawnHotDog, 15000);
 
-// Cząsteczki pędu
+// Thrust particles
 function createParticle(type) {
   const list = type === "fart" ? player.fartParticles : player.peeParticles;
   list.push({
@@ -256,7 +248,7 @@ function createParticle(type) {
   });
 }
 
-// Wyzwalanie dymka mowy
+// Astronaut speech bubble trigger
 function triggerSpeech(kind) {
   if (speechTimer > 0) return;
 
@@ -276,7 +268,7 @@ function triggerSpeech(kind) {
   speechTimer = 90;
 }
 
-// Sterowanie klawiaturą
+// Keyboard controls
 function handleKey(isDown, e) {
   const key = e.key;
   if (key === "ArrowLeft" || key === "a" || key === "A") {
@@ -301,7 +293,7 @@ function handleKey(isDown, e) {
 document.addEventListener("keydown", e => handleKey(true, e));
 document.addEventListener("keyup",   e => handleKey(false, e));
 
-// Sterowanie dotykiem / myszą
+// Pointer/touch controls
 function isFireButtonHit(x, y) {
   const r = 40;
   const fx = canvas.width - 80;
@@ -345,7 +337,7 @@ canvas.addEventListener("pointercancel", e => {
   shooting = false;
 });
 
-// Tworzenie pocisku (Super Pierdnięcie Laserowe)
+// Bullet (Laser Fart)
 function createBullet() {
   bullets.push({
     x: player.x,
@@ -355,7 +347,7 @@ function createBullet() {
   });
 }
 
-// Rysowanie asteroid
+// Draw asteroid
 function drawAsteroid(a) {
   ctx.save();
   ctx.translate(a.x, a.y);
@@ -377,7 +369,7 @@ function drawAsteroid(a) {
   ctx.restore();
 }
 
-// Rysowanie hot-doga
+// Draw hotdog
 function drawHotDog(h) {
   ctx.fillStyle = "#b5651d";
   ctx.fillRect(h.x - h.size / 2, h.y - h.size / 3, h.size, h.size / 1.5);
@@ -393,7 +385,7 @@ function drawHotDog(h) {
   ctx.strokeRect(h.x - h.size / 2, h.y - h.size / 3, h.size, h.size / 1.5);
 }
 
-// Rysowanie gracza
+// Draw player
 function drawPlayer() {
   const p = player;
   ctx.save();
@@ -459,7 +451,7 @@ function drawPlayer() {
   ctx.restore();
 }
 
-// Dymek mowy gracza
+// Player speech bubble
 function drawSpeechBubble() {
   if (speechTimer <= 0 || !speech.text) return;
 
@@ -513,7 +505,7 @@ function drawSpeechBubble() {
   ctx.restore();
 }
 
-// Przycisk strzału
+// Fire button (mobile)
 function drawFireButton() {
   if (!player.hasLaserGun) return;
 
@@ -534,18 +526,18 @@ function drawFireButton() {
   ctx.fillStyle = "#ffffff";
   ctx.textAlign = "center";
   ctx.textBaseline = "middle";
-  ctx.fillText("STRZAŁ", fx, fy);
+  ctx.fillText("FIRE", fx, fy);
   ctx.restore();
 }
 
-// Rysowanie bossa w stylu lovecraftowskim
+// Draw boss (Lovecraftian)
 function drawBoss() {
   if (!boss) return;
 
   ctx.save();
   ctx.translate(boss.x, boss.y);
 
-  // Dolna część: macki ośmiornicy
+  // Tentacles
   const tentacleCount = 7;
   const baseY = boss.size * 0.6;
   for (let i = 0; i < tentacleCount; i++) {
@@ -568,7 +560,7 @@ function drawBoss() {
     ctx.stroke();
   }
 
-  // Środkowy tułów
+  // Body
   const bodyGradient = ctx.createRadialGradient(0, -10, boss.size * 0.2, 0, 0, boss.size * 0.9);
   bodyGradient.addColorStop(0, "#553366");
   bodyGradient.addColorStop(0.5, "#aa55aa");
@@ -582,7 +574,7 @@ function drawBoss() {
   ctx.fill();
   ctx.stroke();
 
-  // Górna głowa (inna istota)
+  // Upper head
   ctx.fillStyle = "#2b1b38";
   ctx.beginPath();
   ctx.ellipse(0, -boss.size * 0.9, boss.size * 0.45, boss.size * 0.45, 0, 0, Math.PI * 2);
@@ -590,7 +582,7 @@ function drawBoss() {
   ctx.strokeStyle = "#ff99ff";
   ctx.stroke();
 
-  // Oczy na górnej głowie
+  // Eyes on upper head
   const eyeOffsetX = boss.size * 0.18;
   const eyeOffsetY = -boss.size * 0.95;
   ctx.fillStyle = "#ffffff";
@@ -605,7 +597,7 @@ function drawBoss() {
   ctx.arc(eyeOffsetX, eyeOffsetY, boss.size * 0.05, 0, Math.PI * 2);
   ctx.fill();
 
-  // Dolne szerokie oko na tułowiu (kosmiczne)
+  // Central eye on body
   ctx.fillStyle = "#ffffff";
   ctx.beginPath();
   ctx.ellipse(0, -boss.size * 0.15, boss.size * 0.35, boss.size * 0.25, 0, 0, Math.PI * 2);
@@ -616,7 +608,7 @@ function drawBoss() {
   ctx.arc(0, -boss.size * 0.15, boss.size * 0.12, 0, Math.PI * 2);
   ctx.fill();
 
-  // Usta na tułowiu
+  // Mouth
   ctx.strokeStyle = "#ffffff";
   ctx.lineWidth = 2;
   ctx.beginPath();
@@ -626,7 +618,7 @@ function drawBoss() {
   ctx.restore();
 }
 
-// Pasek życia bossa
+// Boss health bar
 function drawBossHealthBar() {
   if (!inBossFight || !boss || bossHP <= 0) return;
 
@@ -655,37 +647,70 @@ function drawBossHealthBar() {
   ctx.fillStyle = "#ffffff";
   ctx.textAlign = "center";
   ctx.textBaseline = "bottom";
-  const label = bossPhase === 1 ? "PRZEDWIECZNY" : "PRZEDWIECZNY – DRUGA FORMA";
+  const label = bossPhase === 1 ? "THE ANCIENT ONE" : "THE ANCIENT ONE – SECOND FORM";
   ctx.fillText(label, canvas.width / 2, y - 6);
 
   ctx.restore();
 }
 
-// Dymek mowy bossa – WERSJA DUŻA I NIŻEJ
+// Text wrapping helper for boss speech
+function wrapText(ctx, text, maxWidth) {
+  const words = text.split(" ");
+  const lines = [];
+  let line = "";
+
+  for (let n = 0; n < words.length; n++) {
+    const testLine = line.length > 0 ? line + " " + words[n] : words[n];
+    const metrics = ctx.measureText(testLine);
+    const testWidth = metrics.width;
+    if (testWidth > maxWidth && n > 0) {
+      lines.push(line);
+      line = words[n];
+    } else {
+      line = testLine;
+    }
+  }
+  if (line.length > 0) {
+    lines.push(line);
+  }
+  return lines;
+}
+
+// Boss speech bubble – above boss with wrapping
 function drawBossSpeech() {
   if (!boss || bossSpeech.timer <= 0 || !bossSpeech.text) return;
 
-  const padding = 14;
-  const maxWidth = 600;
+  const padding = 12;
+  const maxWidth = 480;
+  const lineHeight = 30;
 
   ctx.save();
-  ctx.font = "32px Arial";
+  ctx.font = "24px Arial";
   ctx.textAlign = "center";
   ctx.textBaseline = "top";
 
-  const textWidth = ctx.measureText(bossSpeech.text).width;
-  const boxWidth = Math.min(textWidth, maxWidth) + padding * 2;
-  const boxHeight = 60 + padding * 2;
+  const lines = wrapText(ctx, bossSpeech.text, maxWidth);
+  const textWidth = Math.min(
+    maxWidth,
+    Math.max(...lines.map(l => ctx.measureText(l).width))
+  );
+  const boxWidth = textWidth + padding * 2;
+  const boxHeight = lines.length * lineHeight + padding * 2;
 
-  // NIŻEJ – pod bossem, a nie nad
-  const x = boss.x - boxWidth / 2;
-  const y = boss.y + boss.size + 40;
+  // Position bubble above boss, slight overlap allowed
+  let x = boss.x - boxWidth / 2;
+  let y = boss.y - boss.size - boxHeight - 10;
 
-  const r = 18;
+  // Clamp so it doesn't go fully off-screen
+  if (y < 20) y = 20;
+  if (x < 10) x = 10;
+  if (x + boxWidth > canvas.width - 10) x = canvas.width - 10 - boxWidth;
+
+  const r = 16;
 
   ctx.fillStyle = "rgba(20, 0, 40, 0.9)";
   ctx.strokeStyle = "#ff99ff";
-  ctx.lineWidth = 4;
+  ctx.lineWidth = 3;
 
   ctx.beginPath();
   ctx.moveTo(x + r, y);
@@ -701,23 +726,29 @@ function drawBossSpeech() {
   ctx.fill();
   ctx.stroke();
 
-  // Większy ogonek skierowany w górę
+  // Tail pointing down to boss
   ctx.beginPath();
-  const mid = x + boxWidth * 0.5;
-  ctx.moveTo(mid, y);
-  ctx.lineTo(mid - 24, y - 30);
-  ctx.lineTo(mid + 24, y);
+  const mid = boss.x;
+  const tailTopX = Math.max(x + r*2, Math.min(mid, x + boxWidth - r*2));
+  const tailTopY = y + boxHeight;
+  const tailBottomY = tailTopY + 22;
+  ctx.moveTo(tailTopX - 18, tailTopY);
+  ctx.lineTo(tailTopX, tailBottomY);
+  ctx.lineTo(tailTopX + 18, tailTopY);
   ctx.closePath();
   ctx.fill();
   ctx.stroke();
 
   ctx.fillStyle = "#ffffff";
-  ctx.fillText(bossSpeech.text, x + boxWidth / 2, y + padding);
+  ctx.textAlign = "center";
+  for (let i = 0; i < lines.length; i++) {
+    ctx.fillText(lines[i], x + boxWidth / 2, y + padding + i * lineHeight);
+  }
 
   ctx.restore();
 }
 
-// Eksplozja bossa
+// Boss explosion
 function drawBossExplosion() {
   if (bossExplosionTimer <= 0 || !boss) return;
 
@@ -743,21 +774,20 @@ function drawBossExplosion() {
   ctx.restore();
 }
 
-// Główna pętla
+// === MAIN LOOP ===
 function update() {
   ctx.clearRect(0, 0, canvas.width, canvas.height);
 
-  // Spawn pierwszego bossa po czasie, jeśli nie ma
+  // Boss spawns
   if (!bossSpawned && bossesDefeated === 0 && timeScore > 45) {
     spawnBoss(1);
   }
-  // Spawn drugiego bossa później, po pokonaniu pierwszego
   if (!bossSpawned && !boss2Spawned && bossesDefeated === 1 && timeScore > 120) {
     boss2Spawned = true;
     spawnBoss(2);
   }
 
-  // 1. Ruch gracza
+  // Player movement
   if (left) {
     player.vx = -player.speed;
     createParticle("fart");
@@ -775,7 +805,7 @@ function update() {
 
   drawPlayer();
 
-  // 2. Cząsteczki
+  // Thrust particles
   [player.fartParticles, player.peeParticles].forEach((particles, typeIndex) => {
     const color = typeIndex === 0 ? "rgba(0,255,0" : "rgba(255,255,0";
     for (let i = particles.length - 1; i >= 0; i--) {
@@ -793,7 +823,7 @@ function update() {
     }
   });
 
-  // 3. Pociski
+  // Bullets
   for (let i = bullets.length - 1; i >= 0; i--) {
     const b = bullets[i];
     b.y -= bulletSpeed;
@@ -806,7 +836,7 @@ function update() {
       continue;
     }
 
-    // Kolizja z asteroidami
+    // Bullet vs asteroids
     for (let j = asteroids.length - 1; j >= 0; j--) {
       const a = asteroids[j];
       const dx = a.x - b.x;
@@ -821,7 +851,7 @@ function update() {
       }
     }
 
-    // Kolizja z bossem
+    // Bullet vs boss
     if (inBossFight && boss && bossHP > 0) {
       const dx = boss.x - b.x;
       const dy = boss.y - b.y;
@@ -845,7 +875,7 @@ function update() {
     }
   }
 
-  // 4. Asteroidy
+  // Asteroids
   for (let i = asteroids.length - 1; i >= 0; i--) {
     const a = asteroids[i];
     a.y += a.speed;
@@ -856,7 +886,7 @@ function update() {
     const dy = a.y - player.y;
     const dist = Math.sqrt(dx*dx + dy*dy);
     if (dist < a.size + player.size / 2) {
-      alert(`GAME OVER! Czas: ${Math.floor(timeScore)} sekund. Zestrzelone asteroidy: ${asteroidKills}.`);
+      alert(`GAME OVER!\nTime: ${Math.floor(timeScore)} s\nAsteroids destroyed: ${asteroidKills}`);
       document.location.reload();
       return;
     }
@@ -872,7 +902,7 @@ function update() {
     }
   }
 
-  // 5. Hot Dogi
+  // Hotdogs
   for (let i = hotdogs.length - 1; i >= 0; i--) {
     const h = hotdogs[i];
     h.y += h.speed;
@@ -895,7 +925,7 @@ function update() {
     }
   }
 
-  // 6. Boss ruch i strzały
+  // Boss movement & shooting
   if (boss && bossHP > 0) {
     bossAnimPhase += 0.06;
 
@@ -911,7 +941,6 @@ function update() {
 
     boss.shootCooldown--;
     if (boss.shootCooldown <= 0) {
-      // krótszy cooldown z czasem, żeby było ciaśniej
       const diff = getDifficultyFactor();
       const baseCD = bossPhase === 1 ? 45 : 35;
       boss.shootCooldown = baseCD + Math.random() * 25 / diff;
@@ -921,8 +950,8 @@ function update() {
       const baseSide = (targetDX / canvas.width) * 6 + (Math.random() - 0.5) * 2;
       const speed = 6 + Math.random() * 3;
 
-      // Faza 1 – pojedyncze asteroidy
       if (bossPhase === 1) {
+        // Single shot
         asteroids.push({
           x: boss.x,
           y: boss.y + boss.size * 0.6,
@@ -935,7 +964,7 @@ function update() {
           scoreValue: 2
         });
       } else {
-        // Faza 2 – salwa z wachlarzem
+        // Fan shot
         for (let k = -1; k <= 1; k++) {
           const side = baseSide + k * 2.5;
           const s = size * (0.9 + 0.2 * Math.abs(k));
@@ -957,7 +986,7 @@ function update() {
     drawBoss();
   }
 
-  // 7. Eksplozja bossa
+  // Boss explosion
   if (bossExplosionTimer > 0) {
     drawBossExplosion();
     bossExplosionTimer--;
@@ -967,30 +996,29 @@ function update() {
     }
   }
 
-  // 8. HUD
+  // HUD
   timeScore += 1/60;
   ctx.fillStyle = "white";
   ctx.font = "32px Arial";
 
   ctx.textAlign = "left";
-  ctx.fillText(`Czas: ${Math.floor(timeScore)} s`, 20, 40);
+  ctx.fillText(`Time: ${Math.floor(timeScore)} s`, 20, 40);
 
   ctx.textAlign = "right";
-  ctx.fillText(`Zestrzelone: ${asteroidKills}`, canvas.width - 20, 40);
+  ctx.fillText(`Destroyed: ${asteroidKills}`, canvas.width - 20, 40);
 
   if (player.hasLaserGun) {
     ctx.fillStyle = "lime";
     ctx.font = "20px Arial";
     ctx.textAlign = "center";
-    ctx.fillText("SUPER PIERDNIĘCIE LASEROWE AKTYWNE! (Spacja/Enter lub STRZAŁ)", canvas.width / 2, 70);
+    ctx.fillText("LASER FART ACTIVE! (Space/Enter or FIRE)", canvas.width / 2, 70);
   }
 
-  // Wyświetlenie poziomu trudności (opcjonalnie)
   const diffLevel = 1 + Math.floor(getDifficultyFactor() - 1);
   ctx.fillStyle = "#ffdd88";
   ctx.font = "20px Arial";
   ctx.textAlign = "center";
-  ctx.fillText(`Poziom trudności: ${diffLevel}`, canvas.width / 2, 100);
+  ctx.fillText(`Difficulty level: ${diffLevel}`, canvas.width / 2, 100);
 
   drawBossHealthBar();
 
@@ -1009,7 +1037,7 @@ function update() {
   requestAnimationFrame(update);
 }
 
-// Start gry
+// Start game
 update();
 
   </script>
