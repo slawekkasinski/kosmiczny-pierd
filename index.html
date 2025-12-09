@@ -335,13 +335,15 @@
       speed: 6,
       fartParticles: [],
       peeParticles: [],
-      hasLaserGun: false
+      hasLaserGun: false,
+      permaLaser: false
     };
 
     const asteroids = [];
     const bullets = [];
     const bulletSpeed = 8;
     const hotdogs = [];
+    let megaHotdog = null;  // specjalny Mega Hot-Dog z Orlenu
 
     let left = false, right = false, shooting = false;
 
@@ -456,6 +458,16 @@ function spawnHotDog() {
     });
   }
 }
+
+function spawnMegaHotDog(x, y) {
+  megaHotdog = {
+    x: x,
+    y: y,
+    size: 80,   // większy niż zwykły hot-dog
+    speed: 2
+  };
+}
+
 setInterval(spawnHotDog, 15000);
 
 
@@ -502,7 +514,7 @@ function handleKey(isDown, e) {
     e.preventDefault();
   }
   if ((key === " " || key === "Enter") && isDown) {
-    if (player.hasLaserGun && !shooting) {
+    if ((player.hasLaserGun || player.permaLaser) && !shooting) {
       shooting = true;
       createBullet();
     }
@@ -628,7 +640,7 @@ function drawPlayer() {
   if (p.vx < 0) ctx.rotate(-0.15);
   else if (p.vx > 0) ctx.rotate(0.15);
 
-  ctx.strokeStyle = p.hasLaserGun ? "lime" : "#ffffff";
+  ctx.strokeStyle = (p.hasLaserGun || p.permaLaser) ? "lime" : "#ffffff";
   ctx.lineWidth = 2;
 
   ctx.fillStyle = "#d0d8ff";
@@ -814,23 +826,28 @@ function drawBossSpeech() {
   if (!boss || bossSpeech.timer <= 0 || !bossSpeech.text) return;
 
   ctx.save();
-  ctx.font = "24px Arial";
-  const padding = 12;
-  const maxWidth = 380;
+  ctx.font = "26px Arial";
+  const padding = 20;          // większy padding = wyższa ramka
+  const maxWidth = 520;
 
   const lines = wrapText(ctx, bossSpeech.text, maxWidth);
+  const lineHeight = 34;
+  const textBlockHeight = lines.length * lineHeight;
 
   const boxWidth =
     Math.max(...lines.map(line => ctx.measureText(line).width)) + padding * 2;
-  const boxHeight = lines.length * 32 + padding * 2;
+  const boxHeight = textBlockHeight + padding * 2;
 
+  // pozycja ramki tak jak wcześniej (z boku bossa)
   let x = boss.x + boss.size + 30;
   let y = boss.y - boxHeight / 2;
 
+  // jeśli nie mieści się po prawej, przerzuć na lewo
   if (x + boxWidth > canvas.width - 20) {
     x = boss.x - boss.size - boxWidth - 30;
   }
 
+  // poprawki, żeby ramka nie wychodziła poza ekran
   if (y < 20) y = 20;
   if (y + boxHeight > canvas.height - 20) {
     y = canvas.height - boxHeight - 20;
@@ -847,7 +864,7 @@ function drawBossSpeech() {
   ctx.quadraticCurveTo(x + boxWidth, y, x + boxWidth, y + r);
   ctx.lineTo(x + boxWidth, y + boxHeight - r);
   ctx.quadraticCurveTo(x + boxWidth, y + boxHeight, x + boxWidth - r, y + boxHeight);
-  ctx.lineTo(x + r, y + boxHeight);
+  ctx.lineTo(x, y + boxHeight);
   ctx.quadraticCurveTo(x, y + boxHeight, x, y + boxHeight - r);
   ctx.lineTo(x, y + r);
   ctx.quadraticCurveTo(x, y, x + r, y);
@@ -856,11 +873,16 @@ function drawBossSpeech() {
   ctx.fill();
   ctx.stroke();
 
+  // tekst na środku ramki (poziomo i pionowo)
   ctx.fillStyle = "#ffffff";
-  ctx.textAlign = "left";
+  ctx.textAlign = "center";
+
+  const centerX = x + boxWidth / 2;
+  let textY = y + (boxHeight - textBlockHeight) / 2 + lineHeight * 0.8;
 
   for (let i = 0; i < lines.length; i++) {
-    ctx.fillText(lines[i], x + padding, y + padding + i * 32);
+    ctx.fillText(lines[i], centerX, textY);
+    textY += lineHeight;
   }
 
   ctx.restore();
@@ -1166,7 +1188,13 @@ function update() {
         if (bossHP <= 0) {
           bossesDefeated++;
           inBossFight = false;
+          bossSpawned = false;
           bossExplosionTimer = 60;
+
+          // po śmierci pierwszego Przedwiecznego wypuszczamy Mega Hot-Doga z Orlenu
+          if (bossPhase === 1) {
+            spawnMegaHotDog(boss.x, boss.y);
+          }
 
           const deathPool = langData[currentLang].bossDeath;
           setBossSpeech(
@@ -1233,6 +1261,42 @@ function update() {
   }
 
 
+  /* === MEGA HOT-DOG Z ORLENU === */
+
+  if (megaHotdog) {
+    megaHotdog.y += megaHotdog.speed;
+
+    // rysunek większego hot-doga
+    drawHotDog(megaHotdog);
+
+    // napis nad hot-dogiem
+    ctx.font = "20px Arial";
+    ctx.fillStyle = "#ffffff";
+    ctx.textAlign = "center";
+    ctx.fillText(
+      "Mega Hot-Dog z Orlenu",
+      megaHotdog.x,
+      megaHotdog.y - megaHotdog.size
+    );
+
+    // kolizja z graczem
+    const dxM = megaHotdog.x - player.x;
+    const dyM = megaHotdog.y - player.y;
+    const distM = Math.sqrt(dxM*dxM + dyM*dyM);
+
+    if (distM < megaHotdog.size + player.size / 2) {
+      player.permaLaser = true;   // stałe super pierdnięcie
+      player.hasLaserGun = true;  // od razu aktywne
+      megaHotdog = null;          // znika po zjedzeniu
+    }
+
+    // znika, jeśli wyleci poza ekran
+    if (megaHotdog && megaHotdog.y > canvas.height + 120) {
+      megaHotdog = null;
+    }
+  }
+
+
   /* === BOSS HANDLING === */
 
   if (bossExplosionTimer > 0) {
@@ -1261,11 +1325,16 @@ function update() {
   ctx.fillText(`${ui.destroyedLabel}: ${asteroidKills}`,
     canvas.width - 20, 80);
 
-  if (player.hasLaserGun) {
+  if (player.hasLaserGun || player.permaLaser) {
     ctx.font = "18px Arial";
     ctx.fillStyle = "lime";
     ctx.textAlign = "center";
-    ctx.fillText(ui.laserMsg, canvas.width / 2, canvas.height - 40);
+
+    const msg = player.permaLaser
+      ? "STAŁE SUPER PIERDNIĘCIE LASEROWE! (Spacja/Enter)"
+      : ui.laserMsg;
+
+    ctx.fillText(msg, canvas.width / 2, canvas.height - 40);
   }
 
   const difficulty = Math.floor(getDifficultyFactor());
