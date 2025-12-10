@@ -1,507 +1,417 @@
 <!DOCTYPE html>
 <html lang="pl">
 <head>
-
 <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate" />
 <meta http-equiv="Pragma" content="no-cache" />
 <meta http-equiv="Expires" content="0" />
-
-  <meta charset="UTF-8" />
-  <title>Kosmiczny Pierd / Space Fart – Przedwieczny</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-
-  <style>
-    body {
-      margin: 0;
-      overflow: hidden;
-      background: url("bg_kosmiczny_pierd.png") no-repeat center center fixed;
-      background-size: cover;
-    }
-   canvas {
-      display: block;
-      margin: 0 auto;
-      background: transparent;
-      cursor: crosshair;
-      touch-action: none;
-    }
-    #lang-switch {
-      position: fixed;
-      top: 10px;
-      left: 50%;
-      transform: translateX(-50%);
-      z-index: 10;
-      background: rgba(0, 0, 0, 0.6);
-      padding: 6px 10px;
-      border-radius: 999px;
-      font-family: Arial, sans-serif;
-      font-size: 14px;
-      color: #fff;
-      display: flex;
-      align-items: center;
-      gap: 8px;
-    }
-    #lang-switch span {
-      opacity: 0.8;
-    }
-    #lang-switch button {
-      border: 1px solid #aaa;
-      background: transparent;
-      color: #fff;
-      padding: 4px 10px;
-      border-radius: 999px;
-      cursor: pointer;
-      font-size: 13px;
-    }
-    #lang-switch button.active {
-      background: rgba(255, 255, 255, 0.2);
-      border-color: #fff;
-      font-weight: bold;
-    }
-  
-    #lang-overlay {
-      position: fixed;
-      inset: 0;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      background: rgba(0, 0, 0, 0.7);
-      z-index: 20;
-      font-family: Arial, sans-serif;
-    }
-    .lang-panel {
-      background: rgba(10, 10, 30, 0.95);
-      padding: 24px 32px;
-      border-radius: 16px;
-      text-align: center;
-      color: #ffffff;
-      max-width: 90%;
-      box-shadow: 0 0 20px rgba(0,0,0,0.7);
-    }
-    .lang-panel h1 {
-      margin: 0 0 16px;
-      font-size: 26px;
-    }
-    .lang-panel p {
-      margin: 8px 0;
-      font-size: 14px;
-      opacity: 0.85;
-    }
-    .lang-buttons {
-      margin-top: 12px;
-      margin-bottom: 8px;
-    }
-    .lang-buttons button {
-      margin: 0 10px;
-      padding: 10px 22px;
-      font-size: 18px;
-      border-radius: 999px;
-      border: 1px solid #ffffff;
-      background: rgba(255, 255, 255, 0.12);
-      color: #ffffff;
-      cursor: pointer;
-    }
-    .lang-buttons button:hover {
-      background: rgba(255, 255, 255, 0.25);
-    }
-    .lang-panel .hint {
-      font-size: 12px;
-      opacity: 0.7;
-      margin-top: 14px;
-    }
-
-  
-    .cutscene {
-      position: fixed;
-      inset: 0;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      background: rgba(0, 0, 0, 0.95);
-      z-index: 30;
-    }
-    .cutscene.hidden {
-      display: none;
-    }
-    .cutscene img {
-      max-width: 100%;
-      max-height: 100%;
-    }
-
-
-  </style>
+<meta charset="UTF-8" />
+<title>Kosmiczny Pierd / Space Fart – Przedwieczny</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<style>
+  body {
+    margin: 0;
+    overflow: hidden;
+    background: url("bg_kosmiczny_pierd.png") no-repeat center center fixed;
+    background-size: cover;
+  }
+  canvas {
+    display: block;
+    margin: 0 auto;
+    background: transparent;
+    cursor: crosshair;
+    touch-action: none;
+  }
+  #lang-overlay {
+    position: fixed;
+    inset: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: rgba(0, 0, 0, 0.7);
+    z-index: 20;
+    font-family: Arial, sans-serif;
+  }
+  .lang-panel {
+    background: rgba(10, 10, 30, 0.95);
+    padding: 24px 32px;
+    border-radius: 16px;
+    text-align: center;
+    color: #ffffff;
+    max-width: 90%;
+    box-shadow: 0 0 20px rgba(0,0,0,0.7);
+  }
+  .lang-panel h1 {
+    margin: 0 0 16px;
+    font-size: 26px;
+  }
+  .lang-panel p {
+    margin: 8px 0;
+    font-size: 14px;
+    opacity: 0.85;
+  }
+  .lang-buttons {
+    margin-top: 12px;
+    margin-bottom: 8px;
+  }
+  .lang-buttons button {
+    margin: 0 10px;
+    padding: 10px 22px;
+    font-size: 18px;
+    border-radius: 999px;
+    border: 1px solid #ffffff;
+    background: rgba(255, 255, 255, 0.12);
+    color: #ffffff;
+    cursor: pointer;
+  }
+  .lang-buttons button:hover {
+    background: rgba(255, 255, 255, 0.25);
+  }
+  .lang-panel .hint {
+    font-size: 12px;
+    opacity: 0.7;
+    margin-top: 14px;
+  }
+  .cutscene {
+    position: fixed;
+    inset: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: rgba(0, 0, 0, 0.95);
+    z-index: 30;
+  }
+  .cutscene.hidden {
+    display: none;
+  }
+  .cutscene img {
+    max-width: 100%;
+    max-height: 100%;
+  }
+</style>
 </head>
-
 <body>
-
-  <!-- AUTO-CACHE-BYPASS -->
-  <script>
-    (function() {
-      const url = window.location.href;
-      if (!url.includes("v=")) {
-        const timestamp = new Date().getTime();
-        const newUrl =
-          window.location.pathname + "?v=" + timestamp + window.location.hash;
-        window.location.replace(newUrl);
-      }
-    })();
-  </script>
-
-  <!-- LANGUAGE SWITCH UI -->
-  
-
-  
-  <div id="lang-overlay">
-    <div class="lang-panel">
-      <h1>Wybierz język / Choose language</h1>
-      <p>Pick a language to start the game.</p>
-      <div class="lang-buttons">
-        <button onclick="startGame('pl')">Polski (PL)</button>
-        <button onclick="startGame('en')">English (EN)</button>
-      </div>
-      <p class="hint">Dotknij lub kliknij przycisk, aby rozpocząć / Tap or click to start.</p>
-    </div>
-  </div>
-
-  <canvas id="game"></canvas>
-
-  <div id="cutscene-first-boss" class="cutscene hidden">
-    <img src="comic_first_boss.png" alt="Kosmiczny Pierd – pierwszy boss komiks" />
-  </div>
-
-
-
-  <script>
-    /* ==========================================
-       LANGUAGE PACKS (PL + EN)
-    ========================================== */
-    const langData = {
-      pl: {
-        peePhrases: [
-          "Trzeba nie było pić tyle Tatry.",
-          "Chyba przeziębiłem pęcherz...",
-          "Następnym razem siku przed startem.",
-          "Czy w tej galaktyce są toalety?",
-          "Z takim pęcherzem NASA by mnie nie wzięła.",
-          "Kto zaprojektował skafander bez zamka?!",
-          "Za dużo coli przed lotem...",
-          "Czy ktoś widział kosmiczny toi-toi?",
-          "Następna misja: tylko w pampersach.",
-          "Tego nie było w symulatorze..."
-        ],
-        fartPhrases: [
-          "To nie ja, to grawitacja!",
-          "Efekt uboczny hot doga...",
-          "Oby nikt tego nie nagrywał.",
-          "Asteroidy, bójcie się gazu!",
-          "Przynajmniej jest dodatkowy ciąg.",
-          "To nie bąk, to manewr korekcyjny!",
-          "Tak pachnie prawdziwa odwaga.",
-          "Czy to się liczy jako broń chemiczna?",
-          "Ten skafander długo nie wytrzyma...",
-          "Uwaga: uruchomiono toksyczny napęd."
-        ],
-        bossIntro: [
-          "Śmiertelniku, nie powinno cię tu być...",
-          "Obudziłeś mnie swoim smrodem.",
-          "Twoje gazy naruszyły pradawny porządek.",
-          "Przedwieczny nadchodzi po twój hełm!",
-          "Od eonów nie czułem takiej woni..."
-        ],
-        bossHit: [
-          "O, nie, tylko nie SUPER PIERDNIĘCIE LASEROWE!",
-          "Ała, moje kosmiczne macki!",
-          "Kto pozwolił ci na taką broń?!",
-          "Zgłoszę to do kosmicznego BDO!",
-          "To niezgodne z prawami wszechświata!",
-          "Zapamiętam to sobie, humanoidzie!",
-          "Wiesz, ile kosztuje moja regeneracja?!",
-          "Zaraz zadzwonię po prawnika z innego wymiaru!",
-          "Twoje pierdnięcia zaburzają czasoprzestrzeń!",
-          "To trafi do raportu do Rady Przedwiecznych!"
-        ],
-        bossDeath: [
-          "To... jeszcze... nie koniec...",
-          "Powrócę w twoich najgorszych koszmarach...",
-          "Pokonany... przez twoje gazy... niemożliwe...",
-          "Kto by pomyślał, że zginę od pierda...",
-          "Zostawili mnie... na pastwę twojego pęcherza..."
-        ],
-        ui: {
-          timeLabel: "Czas",
-          destroyedLabel: "Zestrzelone",
-          difficultyLabel: "Poziom trudności",
-          laserMsg: "SUPER PIERDNIĘCIE LASEROWE AKTYWNE! (Spacja/Enter lub STRZAŁ)",
-          bossName1: "PRZEDWIECZNY",
-          bossName2: "PRZEDWIECZNY – DRUGА FORМА",
-          gameOverTitle: "KONIEC GRY!",
-          gameOverTime: "Czas",
-          gameOverAst: "Zestrzelone asteroidy"
-        }
-      },
-
-      en: {
-        peePhrases: [
-          "Shouldn't have drunk all that beer...",
-          "My bladder is gonna explode!",
-          "Next time I'm peeing before launch.",
-          "Is there a toilet in this galaxy?",
-          "NASA would never hire this bladder.",
-          "Whose idea was a suit with no zipper?!",
-          "Too much cola before take-off...",
-          "Anyone seen a space porta-potty?",
-          "Next mission: diapers only.",
-          "They never simulated THIS in training..."
-        ],
-        fartPhrases: [
-          "That wasn't a thruster, I swear!",
-          "Side effect of that hot dog...",
-          "I hope no one recorded that.",
-          "Asteroids, fear my gas!",
-          "At least it's eco-friendly thrust.",
-          "It's not a fart, it's a maneuver!",
-          "That's the smell of bravery.",
-          "Is this considered chemical warfare?",
-          "Spacesuit integrity: highly questionable.",
-          "Warning: toxic exhaust engaged."
-        ],
-        bossIntro: [
-          "Mortal, you should not be here...",
-          "Your stench has awakened me.",
-          "Your gases disturb the ancient order.",
-          "The Ancient One comes for your helmet!",
-          "For eons I've not smelled something like this..."
-        ],
-        bossHit: [
-          "No, not the LASER FART!",
-          "My cosmic tentacles!",
-          "Who allowed you such a weapon?!",
-          "I'll report this to Galactic Authorities!",
-          "This violates the laws of the universe!",
-          "I will remember this, human!",
-          "Do you know how much regeneration costs?!",
-          "I'll call a lawyer from another dimension!",
-          "Your farts distort space-time!",
-          "This goes straight into the Elder Gods report!"
-        ],
-        bossDeath: [
-          "This... is not... the end...",
-          "I'll return in your worst nightmares...",
-          "Defeated... by your gases... impossible...",
-          "Who knew I'd fall to a fart...",
-          "Abandoned... to your bladder's mercy..."
-        ],
-        ui: {
-          timeLabel: "Time",
-          destroyedLabel: "Destroyed",
-          difficultyLabel: "Difficulty",
-          laserMsg: "LASER FART ACTIVE! (Space/Enter or FIRE)",
-          bossName1: "THE ANCIENT ONE",
-          bossName2: "THE ANCIENT ONE – SECOND FORM",
-          gameOverTitle: "GAME OVER!",
-          gameOverTime: "Time",
-          gameOverAst: "Asteroids destroyed"
-        }
-      }
-    };
-
-    let currentLang = "pl";
-    let gameStarted = false;
-
-    function setLanguage(lang) {
-      currentLang = lang;
-      const btnPl = document.getElementById("btn-pl");
-      const btnEn = document.getElementById("btn-en");
-      if (btnPl && btnEn) {
-        btnPl.classList.toggle("active", lang === "pl");
-        btnEn.classList.toggle("active", lang === "en");
-      }
-    }
-
-    /* ==========================================
-       GAME INITIALIZATION
-    ========================================== */
-
-    function startGame(lang) {
-      if (gameStarted) return;
-      gameStarted = true;
-
-      if (lang) {
-        setLanguage(lang);
-      } else {
-        setLanguage(currentLang);
-      }
-
-      const overlay = document.getElementById("lang-overlay");
-      if (overlay) {
-        overlay.style.display = "none";
-      }
-
-      update();
-    }
-
-    /* ==========================================
-       CANVAS + GLOBAL OBJECTS
-    ========================================== */
-
-    const canvas = document.getElementById("game");
-    const ctx = canvas.getContext("2d");
-    canvas.width = window.innerWidth;
-    canvas.height = window.innerHeight;
-
-    let timeScore = 0;
-    let asteroidKills = 0;
-
-    const player = {
-      x: canvas.width / 2,
-      y: canvas.height - 120,
-      size: 40,
-      vx: 0,
-      speed: 6,
-      fartParticles: [],
-      peeParticles: [],
-      hasLaserGun: false,
-      permaLaser: false
-    };
-
-    const asteroids = [];
-    const bullets = [];
-    const bulletSpeed = 8;
-    const hotdogs = [];
-    let megaHotdog = null;  // specjalny Mega Hot-Dog z Orlenu
-
-    let left = false, right = false, shooting = false;
-
-    let bossesDefeated = 0;
-    let bossPhase = 0;
-    let boss2Spawned = false;
-
-    let speech = { text: "", xOffset: 0, yOffset: 0 };
-    let speechTimer = 0;
-
-    let boss = null;
-    let inBossFight = false;
-    let bossSpawned = false;
-    let bossHP = 0;
-    let bossMaxHP = 12;
-    let bossExplosionTimer = 0;
-    let bossAnimPhase = 0;
-
-    let bossSpeech = { text: "", timer: 0 };
-    let cutsceneActive = false;
-    let firstBossCutsceneShown = false;
-    const butts = [];
-    const pooShots = [];
-    let buttSpawnTimer = 0;
-
-    function setBossSpeech(text, duration=120) {
-      bossSpeech.text = text;
-      bossSpeech.timer = duration;
-    }
-
-    function showFirstBossCutscene() {
-      const el = document.getElementById("cutscene-first-boss");
-      if (!el) return;
-
-      // wyczyść scenę z obiektów, żeby po cutscence zaczynać "na czysto"
-      asteroids.length = 0;
-      hotdogs.length = 0;
-      player.fartParticles = [];
-      player.peeParticles = [];
-
-      // reset sterowania
-      left = false;
-      right = false;
-      shooting = false;
-
-      el.classList.remove("hidden");
-      cutsceneActive = true;
-
-      // Ukryj cutscenkę automatycznie po 15 sekundach
-      setTimeout(() => {
-        el.classList.add("hidden");
-        cutsceneActive = false;
-
-        // na wszelki wypadek ponownie zerujemy sterowanie
-        left = false;
-        right = false;
-        shooting = false;
-      }, 15000);
-    }
-  </script>
-
-<!-- END OF PART 1 -->
-
-<!-- PART 2 START -->
 <script>
-/* ==========================================
-   ASTEROIDS + DIFFICULTY
-========================================== */
+  // cache-bypass
+  (function() {
+    const url = window.location.href;
+    if (!url.includes("v=")) {
+      const timestamp = new Date().getTime();
+      const newUrl =
+        window.location.pathname + "?v=" + timestamp + window.location.hash;
+      window.location.replace(newUrl);
+    }
+  })();
+</script>
 
+<div id="lang-overlay">
+  <div class="lang-panel">
+    <h1>Wybierz język / Choose language</h1>
+    <p>Pick a language to start the game.</p>
+    <div class="lang-buttons">
+      <button onclick="startGame('pl')">Polski (PL)</button>
+      <button onclick="startGame('en')">English (EN)</button>
+    </div>
+    <p class="hint">Dotknij lub kliknij przycisk, aby rozpocząć / Tap or click to start.</p>
+  </div>
+</div>
+
+<canvas id="game"></canvas>
+
+<div id="cutscene-first-boss" class="cutscene hidden">
+  <img src="comic_first_boss.png" alt="Kosmiczny Pierd – pierwszy boss komiks" />
+</div>
+
+<script>
+// =================== LANGUAGE DATA ===================
+const langData = {
+  pl: {
+    peePhrases: [
+      "Trzeba nie było pić tyle Tatry.",
+      "Chyba przeziębiłem pęcherz...",
+      "Następnym razem siku przed startem.",
+      "Czy w tej galaktyce są toalety?",
+      "Z takim pęcherzem NASA by mnie nie wzięła.",
+      "Kto zaprojektował skafander bez zamka?!",
+      "Za dużo coli przed lotem...",
+      "Czy ktoś widział kosmiczny toi-toi?",
+      "Następna misja: tylko w pampersach.",
+      "Tego nie było w symulatorze..."
+    ],
+    fartPhrases: [
+      "To nie ja, to grawitacja!",
+      "Efekt uboczny hot doga...",
+      "Oby nikt tego nie nagrywał.",
+      "Asteroidy, bójcie się gazu!",
+      "Przynajmniej jest dodatkowy ciąg.",
+      "To nie bąk, to manewr korekcyjny!",
+      "Tak pachnie prawdziwa odwaga.",
+      "Czy to się liczy jako broń chemiczna?",
+      "Ten skafander długo nie wytrzyma...",
+      "Uwaga: uruchomiono toksyczny napęd."
+    ],
+    bossIntro: [
+      "Śmiertelniku, nie powinno cię tu być...",
+      "Obudziłeś mnie swoim smrodem.",
+      "Twoje gazy naruszyły pradawny porządek.",
+      "Przedwieczny nadchodzi po twój hełm!",
+      "Od eonów nie czułem takiej woni..."
+    ],
+    bossHit: [
+      "O, nie, tylko nie SUPER PIERDNIĘCIE LASEROWE!",
+      "Ała, moje kosmiczne macki!",
+      "Kto pozwolił ci na taką broń?!",
+      "Zgłoszę to do kosmicznego BDO!",
+      "To niezgodne z prawami wszechświata!",
+      "Zapamiętam to sobie, humanoidzie!",
+      "Wiesz, ile kosztuje moja regeneracja?!",
+      "Zaraz zadzwonię po prawnika z innego wymiaru!",
+      "Twoje pierdnięcia zaburzają czasoprzestrzeń!",
+      "To trafi do raportu do Rady Przedwiecznych!"
+    ],
+    bossDeath: [
+      "To... jeszcze... nie koniec...",
+      "Powrócę w twoich najgorszych koszmarach...",
+      "Pokonany... przez twoje gazy... niemożliwe...",
+      "Kto by pomyślał, że zginę od pierda...",
+      "Zostawili mnie... na pastwę twojego pęcherza..."
+    ],
+    ui: {
+      timeLabel: "Czas",
+      destroyedLabel: "Zestrzelone",
+      difficultyLabel: "Poziom trudności",
+      laserMsg: "SUPER PIERDNIĘCIE LASEROWE AKTYWNE! (Spacja/Enter lub STRZAŁ)",
+      bossName1: "PRZEDWIECZNY",
+      bossName2: "PRZEDWIECZNY – DRUGA FORMA",
+      gameOverTitle: "KONIEC GRY!",
+      gameOverTime: "Czas",
+      gameOverAst: "Zestrzelone asteroidy"
+    }
+  },
+  en: {
+    peePhrases: [
+      "Shouldn't have drunk all that beer...",
+      "My bladder is gonna explode!",
+      "Next time I'm peeing before launch.",
+      "Is there a toilet in this galaxy?",
+      "NASA would never hire this bladder.",
+      "Whose idea was a suit with no zipper?!",
+      "Too much cola before take-off...",
+      "Anyone seen a space porta-potty?",
+      "Next mission: diapers only.",
+      "They never simulated THIS in training..."
+    ],
+    fartPhrases: [
+      "That wasn't a thruster, I swear!",
+      "Side effect of that hot dog...",
+      "I hope no one recorded that.",
+      "Asteroids, fear my gas!",
+      "At least it's eco-friendly thrust.",
+      "It's not a fart, it's a maneuver!",
+      "That's the smell of bravery.",
+      "Is this considered chemical warfare?",
+      "Spacesuit integrity: highly questionable.",
+      "Warning: toxic exhaust engaged."
+    ],
+    bossIntro: [
+      "Mortal, you should not be here...",
+      "Your stench has awakened me.",
+      "Your gases disturb the ancient order.",
+      "The Ancient One comes for your helmet!",
+      "For eons I've not smelled something like this..."
+    ],
+    bossHit: [
+      "No, not the LASER FART!",
+      "My cosmic tentacles!",
+      "Who allowed you such a weapon?!",
+      "I'll report this to Galactic Authorities!",
+      "This violates the laws of the universe!",
+      "I will remember this, human!",
+      "Do you know how much regeneration costs?!",
+      "I'll call a lawyer from another dimension!",
+      "Your farts distort space-time!",
+      "This goes straight into the Elder Gods report!"
+    ],
+    bossDeath: [
+      "This... is not... the end...",
+      "I'll return in your worst nightmares...",
+      "Defeated... by your gases... impossible...",
+      "Who knew I'd fall to a fart...",
+      "Abandoned... to your bladder's mercy..."
+    ],
+    ui: {
+      timeLabel: "Time",
+      destroyedLabel: "Destroyed",
+      difficultyLabel: "Difficulty",
+      laserMsg: "LASER FART ACTIVE! (Space/Enter or FIRE)",
+      bossName1: "THE ANCIENT ONE",
+      bossName2: "THE ANCIENT ONE – SECOND FORM",
+      gameOverTitle: "GAME OVER!",
+      gameOverTime: "Time",
+      gameOverAst: "Asteroids destroyed"
+    }
+  }
+};
+
+let currentLang = "pl";
+let gameStarted = false;
+
+function setLanguage(lang) {
+  currentLang = lang;
+}
+
+function startGame(lang) {
+  if (gameStarted) return;
+  gameStarted = true;
+  if (lang) setLanguage(lang);
+  const overlay = document.getElementById("lang-overlay");
+  if (overlay) overlay.style.display = "none";
+  update();
+}
+
+// ============ CANVAS & GLOBALS ============
+const canvas = document.getElementById("game");
+const ctx = canvas.getContext("2d");
+canvas.width = window.innerWidth;
+canvas.height = window.innerHeight;
+
+let timeScore = 0;
+let asteroidKills = 0;
+
+const player = {
+  x: canvas.width / 2,
+  y: canvas.height - 120,
+  size: 40,
+  vx: 0,
+  speed: 6,
+  fartParticles: [],
+  peeParticles: [],
+  hasLaserGun: false,
+  permaLaser: false
+};
+
+const asteroids = [];
+const bullets = [];
+const hotdogs = [];
+let megaHotdog = null;
+
+let left = false, right = false, shooting = false;
+
+let bossesDefeated = 0;
+let bossPhase = 0;
+let boss2Spawned = false;
+
+let speech = { text: "", xOffset: 0, yOffset: 0 };
+let speechTimer = 0;
+
+let boss = null;
+let inBossFight = false;
+let bossSpawned = false;
+let bossHP = 0;
+let bossMaxHP = 12;
+let bossExplosionTimer = 0;
+let bossAnimPhase = 0;
+
+let bossSpeech = { text: "", timer: 0 };
+let cutsceneActive = false;
+let cutsceneDismissible = false;
+let firstBossCutsceneShown = false;
+
+// Kosmiczne dupy
+const butts = [];
+const pooShots = [];
+let buttSpawnTimer = 0;
+let buttsEnabled = true;
+const BUTT_TARGET_Y = 140; // wysokość ~Przedwieczny
+
+function setBossSpeech(text, duration = 120) {
+  bossSpeech.text = text;
+  bossSpeech.timer = duration;
+}
+
+function hideFirstBossCutscene() {
+  const el = document.getElementById("cutscene-first-boss");
+  if (!el || !cutsceneActive) return;
+  el.classList.add("hidden");
+  cutsceneActive = false;
+  cutsceneDismissible = false;
+  left = false;
+  right = false;
+  shooting = false;
+}
+
+function showFirstBossCutscene() {
+  const el = document.getElementById("cutscene-first-boss");
+  if (!el) return;
+  asteroids.length = 0;
+  hotdogs.length = 0;
+  player.fartParticles = [];
+  player.peeParticles = [];
+  left = false;
+  right = false;
+  shooting = false;
+  el.classList.remove("hidden");
+  cutsceneActive = true;
+  cutsceneDismissible = false;
+  setTimeout(() => {
+    if (cutsceneActive) cutsceneDismissible = true;
+  }, 2500);
+  setTimeout(() => {
+    if (cutsceneActive) hideFirstBossCutscene();
+  }, 8000);
+}
+</script>
+
+<script>
+// ========= ASTEROIDS & DIFFICULTY =========
 function createAsteroidPoints(size) {
   const points = [];
   const numPoints = 8 + Math.floor(Math.random() * 5);
   const angleIncrement = (Math.PI * 2) / numPoints;
-  const irregularity = 0.4;
-
+  const irr = 0.4;
   for (let i = 0; i < numPoints; i++) {
     const angle = i * angleIncrement;
-    const randomRadius =
-      size * (1 - irregularity + Math.random() * irregularity);
-    points.push({
-      x: Math.cos(angle) * randomRadius,
-      y: Math.sin(angle) * randomRadius
-    });
+    const r = size * (1 - irr + Math.random() * irr);
+    points.push({ x: Math.cos(angle) * r, y: Math.sin(angle) * r });
   }
   return points;
 }
 
-// overall rising difficulty
 function getDifficultyFactor() {
   const t = timeScore;
-  const timeFactor = 1 + t / 60; // +1 each minute
+  const timeFactor = 1 + t / 60;
   const bossFactor = 1 + bossesDefeated * 0.7;
   return timeFactor * bossFactor;
 }
 
-// spawn asteroids (curved + difficulty)
 function spawnAsteroid() {
   if (inBossFight || cutsceneActive) return;
-
   const diff = getDifficultyFactor();
-
   const willCurve = Math.random() < Math.min(0.4 + diff * 0.1, 0.9);
   const isSuper = bossesDefeated > 0 && Math.random() < 0.15;
-
   let size = 40 + Math.random() * 40;
   if (isSuper) size = 70 + Math.random() * 40;
-
   let vx = 0;
   if (willCurve) {
     const baseRange = 4.0 * (1 + 0.2 * diff);
     vx = (Math.random() - 0.5) * baseRange;
   }
-
   const speedBase = 4 + Math.random() * 4;
   const speed = speedBase * (1 + 0.15 * diff);
-
   asteroids.push({
     x: Math.random() * canvas.width,
     y: -50,
-    size: size,
-    speed: speed,
+    size,
+    speed,
     points: createAsteroidPoints(size),
     angle: Math.random() * Math.PI * 2,
     rotationSpeed: (Math.random() - 0.5) * 0.02,
-    vx: vx,
+    vx,
     scoreValue: isSuper ? 5 : 1
   });
 }
 setInterval(spawnAsteroid, 600);
 
-
-/* ==========================================
-   HOTDOGS (LASER POWER-UP)
-========================================== */
+// ========= HOT DOGS =========
 function spawnHotDog() {
   const baseHotdog = {
     x: Math.random() * (canvas.width - 60) + 30,
@@ -519,37 +429,23 @@ function spawnHotDog() {
 }
 
 function spawnMegaHotDog(x, y) {
-  megaHotdog = {
-    x: x,
-    y: y,
-    size: 80,   // większy niż zwykły hot-dog
-    speed: 2
-  };
+  megaHotdog = { x, y, size: 80, speed: 2 };
 }
 
 setInterval(spawnHotDog, 15000);
 
-
-/* ==========================================
-   PLAYER THRUST PARTICLES + SPEECH
-========================================== */
+// ========= PARTICLES & SPEECH =========
 function createParticle(type) {
   const list = type === "fart" ? player.fartParticles : player.peeParticles;
-  list.push({
-    x: player.x,
-    y: player.y + 10,
-    alpha: 1
-  });
+  list.push({ x: player.x, y: player.y + 10, alpha: 1 });
 }
 
 function triggerSpeech(kind) {
   if (speechTimer > 0) return;
-
   let pool;
   if (kind === "pee") pool = langData[currentLang].peePhrases;
   else if (kind === "fart") pool = langData[currentLang].fartPhrases;
   else return;
-
   const phrase = pool[Math.floor(Math.random() * pool.length)];
   speech.text = phrase;
   speech.xOffset = -60 + Math.random() * 120;
@@ -557,20 +453,16 @@ function triggerSpeech(kind) {
   speechTimer = 90;
 }
 
-
-/* ==========================================
-   CONTROLS (Keyboard + Touch)
-========================================== */
-
+// ========= CONTROLS =========
 function handleKey(isDown, e) {
   const key = e.key;
-
-  // podczas cutscenki ignorujemy całe sterowanie
   if (cutsceneActive) {
+    if (isDown && (key === " " || key === "Enter") && cutsceneDismissible) {
+      hideFirstBossCutscene();
+    }
     e.preventDefault();
     return;
   }
-
   if (key === "ArrowLeft" || key === "a" || key === "A") {
     left = isDown;
     e.preventDefault();
@@ -604,7 +496,6 @@ canvas.addEventListener("pointerdown", e => {
   const rect = canvas.getBoundingClientRect();
   const x = e.clientX - rect.left;
   const y = e.clientY - rect.top;
-
   if (player.hasLaserGun && isFireButtonHit(x, y)) {
     if (!shooting) {
       shooting = true;
@@ -612,7 +503,6 @@ canvas.addEventListener("pointerdown", e => {
     }
     return;
   }
-
   if (x < canvas.width / 2) {
     left = true;
     right = false;
@@ -627,18 +517,13 @@ canvas.addEventListener("pointerup", () => {
   right = false;
   shooting = false;
 });
-
 canvas.addEventListener("pointercancel", () => {
   left = false;
   right = false;
   shooting = false;
 });
 
-
-/* ==========================================
-   BULLETS (Laser Fart)
-========================================== */
-
+// ========= BULLETS =========
 function createBullet() {
   bullets.push({
     x: player.x,
@@ -648,30 +533,34 @@ function createBullet() {
   });
 }
 
+// ========= COSMIC BUTTS =========
 function spawnCosmicButt() {
   const size = 80;
   const x = 80 + Math.random() * (canvas.width - 160);
-
   butts.push({
-    x: x,
+    x,
     y: -size,
-    size: size,
-    vx: (Math.random() - 0.5) * 1.5,
+    size,
+    vx: 0,
+    vy: 3,
     hp: 3,
-    shootCooldown: 60 + Math.random() * 60
+    maxHp: 3,
+    shootCooldown: 60 + Math.random() * 60,
+    state: "descending",   // descending -> cruising -> exiting
+    targetY: BUTT_TARGET_Y,
+    animPhase: Math.random() * Math.PI * 2,
+    dir: Math.random() < 0.5 ? -1 : 1
   });
 }
 
 function shootPooFromButt(b) {
-  const shots = 3 + Math.floor(Math.random() * 3); // 3–5 pocisków
-  const baseAngle = Math.PI / 2; // w dół
-  const spread = 0.6;           // wachlarz
-    
+  const shots = 3 + Math.floor(Math.random() * 3);
+  const baseAngle = Math.PI / 2;
+  const spread = 0.6;
   for (let i = 0; i < shots; i++) {
     const t = shots === 1 ? 0.5 : i / (shots - 1);
     const angle = baseAngle - spread / 2 + spread * t;
     const speed = 5 + Math.random() * 2;
-
     pooShots.push({
       x: b.x,
       y: b.y + b.size * 0.4,
@@ -682,26 +571,46 @@ function shootPooFromButt(b) {
   }
 }
 
-/* ==========================================
-   DRAWING FUNCTIONS
-========================================== */
-
+// ========= DRAWING =========
 function drawCosmicButt(b) {
   ctx.save();
   ctx.translate(b.x, b.y);
+  b.animPhase = (b.animPhase || 0) + 0.03;
+  const bob = Math.sin(b.animPhase) * 3;
+  ctx.translate(0, bob);
 
   ctx.fillStyle = "#c68c53";
   ctx.beginPath();
-  ctx.ellipse(-20, 0, 25, 30, 0, 0, Math.PI * 2);
-  ctx.ellipse(20, 0, 25, 30, 0, 0, Math.PI * 2);
+  ctx.ellipse(-20, 0, 26, 32, 0, 0, Math.PI * 2);
+  ctx.ellipse(20, 0, 26, 32, 0, 0, Math.PI * 2);
   ctx.fill();
 
   ctx.strokeStyle = "#5a3b1a";
   ctx.lineWidth = 3;
   ctx.beginPath();
-  ctx.moveTo(-10, 5);
-  ctx.lineTo(10, 5);
+  ctx.moveTo(-10, 6);
+  ctx.lineTo(10, 6);
   ctx.stroke();
+
+  // HP bar
+  const maxHp = b.maxHp || 3;
+  const ratio = Math.max(0, Math.min(1, (b.hp || 0) / maxHp));
+  const barWidth = 60;
+  const barHeight = 8;
+
+  ctx.translate(0, -b.size * 0.8);
+  ctx.fillStyle = "black";
+  ctx.fillRect(-barWidth / 2 - 2, -barHeight / 2 - 2, barWidth + 4, barHeight + 4);
+  ctx.fillStyle = "#440000";
+  ctx.fillRect(-barWidth / 2, -barHeight / 2, barWidth, barHeight);
+
+  let color;
+  if (ratio > 0.7) color = "#00ff44";
+  else if (ratio > 0.3) color = "#ffcc00";
+  else color = "#ff0033";
+
+  ctx.fillStyle = color;
+  ctx.fillRect(-barWidth / 2, -barHeight / 2, barWidth * ratio, barHeight);
 
   ctx.restore();
 }
@@ -720,42 +629,35 @@ function drawAsteroid(a) {
   ctx.save();
   ctx.translate(a.x, a.y);
   ctx.rotate(a.angle);
-
   ctx.beginPath();
   ctx.moveTo(a.points[0].x, a.points[0].y);
   for (let i = 1; i < a.points.length; i++) {
     ctx.lineTo(a.points[i].x, a.points[i].y);
   }
   ctx.closePath();
-
   const gradient = ctx.createRadialGradient(
     0, 0, a.size * 0.5,
     0, 0, a.size * 1.2
   );
   gradient.addColorStop(0, "#555555");
   gradient.addColorStop(1, "#999999");
-
   ctx.fillStyle = gradient;
   ctx.strokeStyle = "#cccccc";
   ctx.lineWidth = 2;
   ctx.fill();
   ctx.stroke();
-
   ctx.restore();
 }
 
 function drawHotDog(h) {
   ctx.fillStyle = "#b5651d";
   ctx.fillRect(h.x - h.size / 2, h.y - h.size / 3, h.size, h.size / 1.5);
-
   ctx.fillStyle = "#ffebcd";
   ctx.beginPath();
   ctx.ellipse(h.x, h.y, h.size / 2 + 5, h.size / 2 - 5, 0, 0, Math.PI * 2);
   ctx.fill();
-
   ctx.fillStyle = "yellow";
   ctx.fillRect(h.x - h.size / 3, h.y - h.size / 4, h.size / 6, h.size / 2);
-
   ctx.strokeStyle = "black";
   ctx.lineWidth = 1;
   ctx.strokeRect(h.x - h.size / 2, h.y - h.size / 3, h.size, h.size / 1.5);
@@ -765,10 +667,8 @@ function drawPlayer() {
   const p = player;
   ctx.save();
   ctx.translate(p.x, p.y);
-
   if (p.vx < 0) ctx.rotate(-0.15);
   else if (p.vx > 0) ctx.rotate(0.15);
-
   ctx.strokeStyle = (p.hasLaserGun || p.permaLaser) ? "lime" : "#ffffff";
   ctx.lineWidth = 2;
 
@@ -797,9 +697,6 @@ function drawPlayer() {
   ctx.lineTo(-32, 0);
   ctx.moveTo(18, -20);
   ctx.lineTo(32, 0);
-  ctx.stroke();
-
-  ctx.beginPath();
   ctx.moveTo(-10, 20);
   ctx.lineTo(-14, 46);
   ctx.moveTo(10, 20);
@@ -811,29 +708,22 @@ function drawPlayer() {
 
 function drawSpeechBubble() {
   if (speechTimer <= 0 || !speech.text) return;
-
   ctx.save();
   ctx.translate(player.x + speech.xOffset, player.y + speech.yOffset);
-
   const padding = 6;
   const maxWidth = 260;
-
   ctx.font = "16px Arial";
   ctx.textAlign = "left";
   ctx.textBaseline = "top";
-
   const textWidth = ctx.measureText(speech.text).width;
   const boxWidth = Math.min(textWidth, maxWidth) + padding * 2;
   const boxHeight = 24 + padding * 2;
-
   const x = 0;
   const y = 0;
   const r = 8;
-
   ctx.fillStyle = "rgba(0,0,0,0.7)";
   ctx.strokeStyle = "#fff";
   ctx.lineWidth = 2;
-
   ctx.beginPath();
   ctx.moveTo(x+r, y);
   ctx.lineTo(x+boxWidth-r, y);
@@ -847,24 +737,16 @@ function drawSpeechBubble() {
   ctx.closePath();
   ctx.fill();
   ctx.stroke();
-
   ctx.fillStyle = "#fff";
   ctx.fillText(speech.text, x+padding, y+padding);
-
   ctx.restore();
 }
 
-
-/* ==========================================
-   BOSS DRAWING (Cthulhu-style)
-========================================== */
-
+// ========= BOSS DRAWING & SPEECH =========
 function drawBoss() {
   if (!boss || bossHP <= 0) return;
-
   ctx.save();
   ctx.translate(boss.x, boss.y);
-
   // tentacles
   for (let i = 0; i < 7; i++) {
     const angle = -Math.PI / 2 + (i / 6) * Math.PI;
@@ -881,8 +763,6 @@ function drawBoss() {
     );
     ctx.stroke();
   }
-
-  // body
   const gradient = ctx.createRadialGradient(
     0, -10, boss.size * 0.3,
     0, 0, boss.size * 0.9
@@ -890,15 +770,12 @@ function drawBoss() {
   gradient.addColorStop(0, "#553366");
   gradient.addColorStop(0.5, "#aa55aa");
   gradient.addColorStop(1, "#220022");
-
   ctx.fillStyle = gradient;
   ctx.beginPath();
   ctx.ellipse(0, 0, boss.size * 0.8, boss.size, 0, 0, Math.PI * 2);
   ctx.fill();
   ctx.strokeStyle = "#ff99ff";
   ctx.stroke();
-
-  // head
   ctx.fillStyle = "#2b1b38";
   ctx.beginPath();
   ctx.ellipse(
@@ -912,33 +789,23 @@ function drawBoss() {
   );
   ctx.fill();
   ctx.stroke();
-
-  // eyes
   ctx.fillStyle = "#fff";
   ctx.beginPath();
   ctx.ellipse(-boss.size * 0.18, -boss.size * 1.0, boss.size * 0.12, boss.size * 0.16, 0, 0, Math.PI * 2);
   ctx.ellipse( boss.size * 0.18, -boss.size * 1.0, boss.size * 0.12, boss.size * 0.16, 0, 0, Math.PI * 2);
   ctx.fill();
-
   ctx.fillStyle = "#00ffdd";
   ctx.beginPath();
   ctx.arc(-boss.size * 0.18, -boss.size * 1.0, boss.size * 0.05, 0, Math.PI * 2);
   ctx.arc( boss.size * 0.18, -boss.size * 1.0, boss.size * 0.05, 0, Math.PI * 2);
   ctx.fill();
-
   ctx.restore();
 }
-
-
-/* ==========================================
-   BOSS SPEECH (Wrapped, Above Boss)
-========================================== */
 
 function wrapText(ctx, text, maxWidth) {
   const words = text.split(" ");
   const lines = [];
   let line = "";
-
   for (let word of words) {
     const test = line ? line + " " + word : word;
     if (ctx.measureText(test).width > maxWidth) {
@@ -950,42 +817,30 @@ function wrapText(ctx, text, maxWidth) {
   return lines;
 }
 
-
 function drawBossSpeech() {
   if (!boss || bossSpeech.timer <= 0 || !bossSpeech.text) return;
-
   ctx.save();
   ctx.font = "26px Arial";
-  const padding = 20;          // większy padding = wyższa ramka
+  const padding = 20;
   const maxWidth = 520;
-
   const lines = wrapText(ctx, bossSpeech.text, maxWidth);
   const lineHeight = 34;
   const textBlockHeight = lines.length * lineHeight;
-
   const boxWidth =
     Math.max(...lines.map(line => ctx.measureText(line).width)) + padding * 2;
   const boxHeight = textBlockHeight + padding * 2;
-
-  // pozycja ramki tak jak wcześniej (z boku bossa)
   let x = boss.x + boss.size + 30;
   let y = boss.y - boxHeight / 2;
-
-  // jeśli nie mieści się po prawej, przerzuć na lewo
   if (x + boxWidth > canvas.width - 20) {
     x = boss.x - boss.size - boxWidth - 30;
   }
-
-  // poprawki, żeby ramka nie wychodziła poza ekran
   if (y < 20) y = 20;
   if (y + boxHeight > canvas.height - 20) {
     y = canvas.height - boxHeight - 20;
   }
-
   ctx.fillStyle = "rgba(20, 0, 40, 1.0)";
   ctx.strokeStyle = "#ff99ff";
   ctx.lineWidth = 3;
-
   const r = 16;
   ctx.beginPath();
   ctx.moveTo(x + r, y);
@@ -998,63 +853,41 @@ function drawBossSpeech() {
   ctx.lineTo(x, y + r);
   ctx.quadraticCurveTo(x, y, x + r, y);
   ctx.closePath();
-
   ctx.fill();
   ctx.stroke();
-
-  // tekst na środku ramki (poziomo i pionowo)
   ctx.fillStyle = "#ffffff";
   ctx.textAlign = "center";
-
   const centerX = x + boxWidth / 2;
   let textY = y + (boxHeight - textBlockHeight) / 2 + lineHeight * 0.8;
-
   for (let i = 0; i < lines.length; i++) {
     ctx.fillText(lines[i], centerX, textY);
     textY += lineHeight;
   }
-
   ctx.restore();
 }
-/* ==========================================
-   BOSS HEALTH BAR
-========================================== */
 
 function drawBossHealthBar() {
   if (!inBossFight || !boss || bossHP <= 0) return;
-
   const barWidth = 80;
   const barHeight = 10;
-
   const x = boss.x + boss.size * 0.6;
   const y = boss.y - boss.size * 1.1;
-
   const ratio = bossHP / bossMaxHP;
-
   let color;
   if (ratio > 0.7) color = "#00ff44";
   else if (ratio > 0.3) color = "#ffcc00";
   else color = "#ff0033";
-
   ctx.save();
   ctx.fillStyle = "black";
   ctx.fillRect(x - 2, y - 2, barWidth + 4, barHeight + 4);
-
   ctx.fillStyle = "#440000";
   ctx.fillRect(x, y, barWidth, barHeight);
-
   ctx.fillStyle = color;
   ctx.fillRect(x, y, barWidth * ratio, barHeight);
-
   ctx.restore();
-}</script>
-<!-- PART 2 END -->
-<!-- PART 3 START -->
-<script>
-/* ==========================================
-   BOSS MOVEMENT + SHOOTING
-========================================== */
+}
 
+// ========= BOSS LOGIC =========
 function spawnBoss(phase) {
   bossPhase = phase;
   boss = {
@@ -1065,32 +898,35 @@ function spawnBoss(phase) {
     direction: 1,
     shootCooldown: 90
   };
-
   bossMaxHP = phase === 1 ? 12 : 20;
   bossHP = bossMaxHP;
-
   inBossFight = true;
   bossSpawned = true;
   bossExplosionTimer = 0;
 
+  // przy pojawieniu drugiej formy – dupy odlatują
+  if (phase === 2) {
+    buttsEnabled = false;
+    for (const b of butts) {
+      b.state = "exiting";
+      b.vy = -3;
+      b.vx = (b.x < canvas.width / 2 ? -3 : 3);
+    }
+  }
+
   const introPool = langData[currentLang].bossIntro;
   let intro = introPool[Math.floor(Math.random() * introPool.length)];
-
   if (phase === 2) {
     intro += currentLang === "pl" ? " (druga forma!)" : " (second form!)";
   }
-
   setBossSpeech(intro, 180);
 }
 
 function updateBoss() {
   if (!boss || bossHP <= 0) return;
-
   bossAnimPhase += 0.05;
-
   boss.x += boss.vx * boss.direction;
   const margin = 80;
-
   if (boss.x < margin) {
     boss.x = margin;
     boss.direction = 1;
@@ -1098,100 +934,72 @@ function updateBoss() {
     boss.x = canvas.width - margin;
     boss.direction = -1;
   }
-
   boss.shootCooldown--;
-
   if (boss.shootCooldown <= 0) {
     const diff = getDifficultyFactor();
-
     if (bossPhase === 1) {
       boss.shootCooldown = 70 - diff * 3 + Math.random() * 25;
-
       const size = 40 + Math.random() * 40;
       const vx = (Math.random() - 0.5) * (4 + diff);
-
       asteroids.push({
         x: boss.x,
         y: boss.y + boss.size * 0.5,
-        size: size,
+        size,
         speed: 6 + diff,
         points: createAsteroidPoints(size),
         angle: 0,
         rotationSpeed: (Math.random() - 0.5) * 0.05,
-        vx: vx,
+        vx,
         scoreValue: 3
       });
-    }
-
-    else {
+    } else {
       boss.shootCooldown = 60 - diff * 2 + Math.random() * 20;
-
       for (let k = -2; k <= 2; k++) {
         const size = 30 + Math.random() * 30;
         const vx = k * (2 + diff * 0.5);
-
         asteroids.push({
           x: boss.x,
           y: boss.y + boss.size * 0.5,
-          size: size,
+          size,
           speed: 6 + diff + Math.abs(k),
           points: createAsteroidPoints(size),
           angle: 0,
           rotationSpeed: (Math.random() - 0.5) * 0.05,
-          vx: vx,
+          vx,
           scoreValue: 4
         });
       }
     }
   }
-
   drawBoss();
 }
 
-
-/* ==========================================
-   BOSS EXPLOSION
-========================================== */
-
 function drawBossExplosion() {
   if (bossExplosionTimer <= 0) return;
-
   const t = bossExplosionTimer;
   const progress = 1 - t / 60;
-
   ctx.save();
   ctx.translate(boss.x, boss.y);
-
   for (let i = 0; i < 12; i++) {
     const angle = (Math.PI * 2 * i) / 12;
     const dist = 20 + progress * 120;
     const size = 10 + progress * 30;
-
     const x = Math.cos(angle) * dist;
     const y = Math.sin(angle) * dist;
-
     ctx.fillStyle = `rgba(255, ${200 - progress * 180}, 0, ${1 - progress})`;
     ctx.beginPath();
     ctx.arc(x, y, size, 0, Math.PI * 2);
     ctx.fill();
   }
-
   ctx.restore();
 }
 
-
-/* ==========================================
-   MAIN UPDATE LOOP
-========================================== */
-
-
+// ========= HUD & FIRE BUTTON =========
 function drawFireButton() {
-  if (!player.hasLaserGun) return;
-
+  if (!player.hasLaserGun && !player.permaLaser) return;
   const r = 50;
   const fx = canvas.width - 90;
   const fy = canvas.height - 100;
-
   ctx.save();
   ctx.beginPath();
   ctx.arc(fx, fy, r, 0, Math.PI * 2);
@@ -1200,7 +1008,6 @@ function drawFireButton() {
   ctx.lineWidth = 4;
   ctx.strokeStyle = "lime";
   ctx.stroke();
-
   ctx.font = "18px Arial";
   ctx.fillStyle = "#ffffff";
   ctx.textAlign = "center";
@@ -1209,43 +1016,29 @@ function drawFireButton() {
   ctx.restore();
 }
 
+// ========= MAIN UPDATE LOOP =========
 function update() {
   ctx.clearRect(0, 0, canvas.width, canvas.height);
-
   if (cutsceneActive) {
     requestAnimationFrame(update);
     return;
   }
 
-  // Cutscene trigger after first boss is defeated
+  // boss spawn
+  if (!bossSpawned && bossesDefeated === 0 && timeScore > 45) {
+    spawnBoss(1);
+  }
+  if (!bossSpawned && bossesDefeated === 1 && timeScore > 120) {
+    spawnBoss(2);
+  }
+
+  // cutscene after first boss
   if (!inBossFight && !bossSpawned && bossesDefeated === 1 && !firstBossCutsceneShown) {
     showFirstBossCutscene();
     firstBossCutsceneShown = true;
   }
 
-  // Spawn cosmic butts periodically when player has laser
-  if ((player.hasLaserGun || player.permaLaser) && !cutsceneActive && !inBossFight) {
-    buttSpawnTimer++;
-    if (buttSpawnTimer > 720 && butts.length < 2) {
-      spawnCosmicButt();
-      buttSpawnTimer = 0;
-    }
-  } else {
-    buttSpawnTimer = 0;
-  }
-
-  // Spawn boss 1
-  if (!bossSpawned && bossesDefeated === 0 && timeScore > 45) {
-    spawnBoss(1);
-  }
-
-  // Spawn second form
-  if (!bossSpawned && bossesDefeated === 1 && timeScore > 120) {
-    spawnBoss(2);
-  }
-
-  /* === PLAYER MOVEMENT === */
-
+  // player movement
   if (left) {
     player.vx = -player.speed;
     createParticle("fart");
@@ -1257,18 +1050,13 @@ function update() {
   } else {
     player.vx = 0;
   }
-
   player.x += player.vx;
   player.x = Math.max(player.size, Math.min(canvas.width - player.size, player.x));
-
   drawPlayer();
 
-
-  /* === PARTICLES === */
-
+  // particles
   [player.fartParticles, player.peeParticles].forEach((particles, index) => {
     const color = index === 0 ? "rgba(0,255,0" : "rgba(255,255,0";
-
     for (let i = particles.length - 1; i >= 0; i--) {
       const p = particles[i];
       p.y += 2;
@@ -1283,28 +1071,22 @@ function update() {
     }
   });
 
-
-  /* === BULLETS === */
-
+  // bullets
   for (let i = bullets.length - 1; i >= 0; i--) {
     const b = bullets[i];
-    b.y -= bulletSpeed;
-
+    b.y -= 8;
     ctx.fillStyle = "lime";
     ctx.fillRect(b.x - b.width / 2, b.y, b.width, b.height);
-
     if (b.y < -50) {
       bullets.splice(i, 1);
       continue;
     }
-
     // bullets vs asteroids
     for (let j = asteroids.length - 1; j >= 0; j--) {
       const a = asteroids[j];
       const dx = a.x - b.x;
       const dy = a.y - b.y;
       const dist = Math.sqrt(dx*dx + dy*dy);
-
       if (dist < a.size) {
         asteroidKills += a.scoreValue || 1;
         asteroids.splice(j, 1);
@@ -1312,49 +1094,44 @@ function update() {
         break;
       }
     }
-
     // bullets vs butts
     for (let k = butts.length - 1; k >= 0; k--) {
       const butt = butts[k];
       const dxB = butt.x - b.x;
       const dyB = butt.y - b.y;
       const distB = Math.sqrt(dxB*dxB + dyB*dyB);
-
-      if (distB < butt.size) {
+      if (distB < butt.size * 0.6) {
         butt.hp = (butt.hp || 3) - 1;
         bullets.splice(i, 1);
         if (butt.hp <= 0) {
+          const exiting = butt.state === "exiting";
           butts.splice(k, 1);
+          if (buttsEnabled && !exiting) {
+            spawnCosmicButt(); // nowa dupa po zestrzeleniu
+          }
         }
         break;
       }
     }
-
     // bullets vs boss
     if (boss && bossHP > 0) {
       const dx = boss.x - b.x;
       const dy = boss.y - b.y;
       const dist = Math.sqrt(dx*dx + dy*dy);
-
       if (dist < boss.size * 0.7) {
         bullets.splice(i, 1);
         bossHP--;
-
         const pool = langData[currentLang].bossHit;
         const phrase = pool[Math.floor(Math.random() * pool.length)];
         setBossSpeech(phrase, 150);
-
         if (bossHP <= 0) {
           bossesDefeated++;
           inBossFight = false;
           bossSpawned = false;
           bossExplosionTimer = 60;
-
-          // po śmierci pierwszego Przedwiecznego wypuszczamy Mega Hot-Doga z Orlenu
           if (bossPhase === 1) {
             spawnMegaHotDog(boss.x, boss.y);
           }
-
           const deathPool = langData[currentLang].bossDeath;
           setBossSpeech(
             deathPool[Math.floor(Math.random() * deathPool.length)],
@@ -1365,44 +1142,65 @@ function update() {
     }
   }
 
+  // butt spawning (max 2) – tylko gdy gracz ma laser i nie ma drugiej formy
+  // Kosmiczne Dupy pojawiają się DOPIERO po zabiciu pierwszego Przedwiecznego,
+  // czyli gdy bossesDefeated === 1, poza walką z bossem i bez cutscenki.
+  if (
+    buttsEnabled &&
+    bossesDefeated === 1 &&
+    !inBossFight &&
+    !cutsceneActive &&
+    (player.hasLaserGun || player.permaLaser)
+  ) {
+    buttSpawnTimer++;
+    if (buttSpawnTimer > 180 && butts.length < 2) {
+      spawnCosmicButt();
+      buttSpawnTimer = 0;
+    }
+  } else {
+    buttSpawnTimer = 0;
+  }
 
-
-  /* === KOSMICZNE SRAJĄCE DUPY === */
-
+  // butts update
   for (let i = butts.length - 1; i >= 0; i--) {
     const b = butts[i];
-
-    // ruch dupy
-    b.y += 1.2;
-    b.x += b.vx || 0;
-
-    // strzelanie kupą
-    b.shootCooldown--;
-    if (b.shootCooldown <= 0) {
-      shootPooFromButt(b);
-      b.shootCooldown = 50 + Math.random() * 50;
+    if (b.state === "descending") {
+      b.y += b.vy;
+      if (b.y >= b.targetY) {
+        b.y = b.targetY;
+        b.state = "cruising";
+      }
+    } else if (b.state === "cruising") {
+      b.x += 2 * b.dir;
+      if (b.x < 60) {
+        b.x = 60;
+        b.dir = 1;
+      } else if (b.x > canvas.width - 60) {
+        b.x = canvas.width - 60;
+        b.dir = -1;
+      }
+      b.shootCooldown--;
+      if (b.shootCooldown <= 0) {
+        shootPooFromButt(b);
+        b.shootCooldown = 50 + Math.random() * 50;
+      }
+    } else if (b.state === "exiting") {
+      b.x += b.vx || 0;
+      b.y += b.vy || -3;
     }
-
     drawCosmicButt(b);
-
-    // wypadła poza ekran – usuwamy
-    if (b.y - b.size > canvas.height + 100) {
+    if (b.y < -150 || b.y > canvas.height + 150 ||
+        b.x < -150 || b.x > canvas.width + 150) {
       butts.splice(i, 1);
     }
   }
 
-
-  /* === POCISKI-KUPY === */
-
+  // poo shots
   for (let i = pooShots.length - 1; i >= 0; i--) {
     const p = pooShots[i];
-
     p.x += p.vx;
     p.y += p.vy;
-
     drawPooShot(p);
-
-    // poza ekranem – usuwamy
     if (
       p.y - p.size > canvas.height + 50 ||
       p.x < -100 || p.x > canvas.width + 100
@@ -1410,162 +1208,122 @@ function update() {
       pooShots.splice(i, 1);
       continue;
     }
-
-    // kolizja z graczem
     const dx = p.x - player.x;
     const dy = p.y - player.y;
     const dist = Math.sqrt(dx * dx + dy * dy);
     if (dist < p.size + player.size / 2) {
       const ui = langData[currentLang].ui;
-      alert(ui.losePoo || "Dostałeś kupą! Koniec gry.");
+      alert(ui.gameOverTitle + "\n" +
+        ui.gameOverTime + ": " + Math.floor(timeScore) + " s\n" +
+        ui.gameOverAst + ": " + asteroidKills);
       location.reload();
       return;
     }
   }
 
-  /* === ASTEROIDS === */
-
+  // asteroids
   for (let i = asteroids.length - 1; i >= 0; i--) {
     const a = asteroids[i];
-
     a.y += a.speed;
     a.x += a.vx || 0;
     a.angle += a.rotationSpeed;
-
     const dx = a.x - player.x;
     const dy = a.y - player.y;
     const dist = Math.sqrt(dx*dx + dy*dy);
-
     if (dist < a.size + player.size / 2) {
       const ui = langData[currentLang].ui;
       alert(
-        `${ui.gameOverTitle}\n` +
-        `${ui.gameOverTime}: ${Math.floor(timeScore)} s\n` +
-        `${ui.gameOverAst}: ${asteroidKills}`
+        ui.gameOverTitle + "\n" +
+        ui.gameOverTime + ": " + Math.floor(timeScore) + " s\n" +
+        ui.gameOverAst + ": " + asteroidKills
       );
       location.reload();
+      return;
     }
-
     drawAsteroid(a);
-
     if (a.y > canvas.height + 100 ||
         a.x < -120 ||
         a.x > canvas.width + 120)
       asteroids.splice(i, 1);
   }
 
-
-  /* === HOTDOGS === */
-
+  // hotdogs
   for (let i = hotdogs.length - 1; i >= 0; i--) {
     const h = hotdogs[i];
-
     h.y += h.speed;
     drawHotDog(h);
-
     const dx = h.x - player.x;
     const dy = h.y - player.y;
     const dist = Math.sqrt(dx*dx + dy*dy);
-
     if (dist < h.size + player.size / 2) {
       player.hasLaserGun = true;
       hotdogs.splice(i, 1);
       setTimeout(() => player.hasLaserGun = false, 10000);
     }
-
     if (h.y > canvas.height + 100) hotdogs.splice(i, 1);
   }
 
-
-  /* === MEGA HOT-DOG Z ORLENU === */
-
+  // mega hotdog
   if (megaHotdog) {
     megaHotdog.y += megaHotdog.speed;
-
-    // rysunek większego hot-doga
     drawHotDog(megaHotdog);
-
-    // napis nad hot-dogiem
     ctx.font = "20px Arial";
     ctx.fillStyle = "#ffffff";
     ctx.textAlign = "center";
-    ctx.fillText(
-      "Mega Hot-Dog z Orlenu",
+    ctx.fillText("Mega Hot-Dog z Orlenu",
       megaHotdog.x,
       megaHotdog.y - megaHotdog.size
     );
-
-    // kolizja z graczem
     const dxM = megaHotdog.x - player.x;
     const dyM = megaHotdog.y - player.y;
     const distM = Math.sqrt(dxM*dxM + dyM*dyM);
-
     if (distM < megaHotdog.size + player.size / 2) {
-      player.permaLaser = true;   // stałe super pierdnięcie
-      player.hasLaserGun = true;  // od razu aktywne
-      megaHotdog = null;          // znika po zjedzeniu
+      player.permaLaser = true;
+      player.hasLaserGun = true;
+      megaHotdog = null;
     }
-
-    // znika, jeśli wyleci poza ekran
     if (megaHotdog && megaHotdog.y > canvas.height + 120) {
       megaHotdog = null;
     }
   }
 
-
-  /* === BOSS HANDLING === */
-
+  // boss explosion & logic
   if (bossExplosionTimer > 0) {
     drawBossExplosion();
     bossExplosionTimer--;
     if (bossExplosionTimer === 0) boss = null;
   }
-
   updateBoss();
   drawBossSpeech();
   drawBossHealthBar();
 
-
-  /* === HUD === */
-
+  // HUD
   timeScore += 1/60;
-
   const ui = langData[currentLang].ui;
-
   ctx.fillStyle = "white";
   ctx.font = "32px Arial";
   ctx.textAlign = "left";
   ctx.fillText(`${ui.timeLabel}: ${Math.floor(timeScore)} s`, 20, 80);
-
   ctx.textAlign = "right";
-  ctx.fillText(`${ui.destroyedLabel}: ${asteroidKills}`,
-    canvas.width - 20, 80);
-
+  ctx.fillText(`${ui.destroyedLabel}: ${asteroidKills}`, canvas.width - 20, 80);
   if (player.hasLaserGun || player.permaLaser) {
     ctx.font = "18px Arial";
     ctx.fillStyle = "lime";
     ctx.textAlign = "center";
-
     const msg = player.permaLaser
-      ? "STAŁE SUPER PIERDNIĘCIE LASEROWE! (Spacja/Enter)"
+      ? (currentLang === "pl"
+          ? "STAŁE SUPER PIERDNIĘCIE LASEROWE! (Spacja/Enter)"
+          : "PERMANENT LASER FART! (Space/Enter)")
       : ui.laserMsg;
-
     ctx.fillText(msg, canvas.width / 2, canvas.height - 40);
   }
-
-  const difficulty = Math.floor(getDifficultyFactor());
   ctx.font = "20px Arial";
   ctx.fillStyle = "#ffdd88";
-  ctx.textAlign = "center";
   ctx.textAlign = "left";
-    ctx.fillText(`${ui.difficultyLabel}: ${difficulty}`, 20, 120);
+  const difficulty = Math.floor(getDifficultyFactor());
+  ctx.fillText(`${ui.difficultyLabel}: ${difficulty}`, 20, 120);
 
-
-  
-  // Mobile FIRE button
   drawFireButton();
-
-/* === PLAYER SPEECH === */
 
   if (speechTimer > 0) {
     drawSpeechBubble();
@@ -1574,9 +1332,7 @@ function update() {
 
   requestAnimationFrame(update);
 }
-
 </script>
 
 </body>
 </html>
-<!-- PART 3 END -->
