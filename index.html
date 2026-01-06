@@ -47,7 +47,7 @@
   .lang-panel p {
     margin: 8px 0;
     font-size: 14px;
-    opacity: 0.85;
+    opacity: 0.7225;
   }
   .lang-buttons {
     margin-top: 12px;
@@ -117,8 +117,19 @@
 
 <canvas id="game"></canvas>
 
+<div id="victory-overlay" style="display:none; position:fixed; inset:0; z-index:40; background:rgba(0,0,0,0.92); align-items:center; justify-content:center; font-family: Arial, sans-serif;">
+  <div style="background:rgba(10,10,30,0.95); padding:24px 32px; border-radius:16px; text-align:center; color:#ffffff; max-width:90%; box-shadow:0 0 20px rgba(0,0,0,0.7);">
+    <h1 id="victory-title" style="margin:0 0 12px; font-size:28px;">Pokonałeś Przedwiecznego!</h1>
+    <p id="victory-summary" style="margin:8px 0; font-size:16px; opacity:0.9;"></p>
+    <p id="victory-next" style="margin:14px 0 0; font-size:14px; opacity:0.75;">Rozdział 2: Podniebne Latające Cycki wkrótce</p>
+  </div>
+</div>
 <div id="cutscene-first-boss" class="cutscene hidden">
   <img src="comic_first_boss.png" alt="Kosmiczny Pierd – pierwszy boss komiks" />
+</div>
+
+<div id="cutscene-butt" class="cutscene hidden">
+  <img src="kosmiczna_dupa.png" alt="Kosmiczne Srające Dupy – cutscenka" />
 </div>
 
 <script>
@@ -254,6 +265,7 @@ const langData = {
 
 let currentLang = "pl";
 let gameStarted = false;
+let gameEnded = false;
 
 function setLanguage(lang) {
   currentLang = lang;
@@ -300,6 +312,14 @@ let bossesDefeated = 0;
 let bossPhase = 0;
 let boss2Spawned = false;
 
+// Boss 2: spawn 8s after last cosmic butt is destroyed (after boss 1)
+let boss2ReadyAt = null; // timeScore (s) when we may spawn boss2
+
+// Difficulty freeze: asteroid speed should stop increasing once boss2 appears
+let difficultyFreezeTime = null; // timeScore (s) used to cap time-based difficulty
+const BOSS2_ASTEROID_SPEED_MULT = 0.7225; // -15% speed during boss2
+const BOSS2_DIFF_TIME_SECONDS = 75; // boss2 uses difficulty as if timeScore==75s
+
 let speech = { text: "", xOffset: 0, yOffset: 0 };
 let speechTimer = 0;
 
@@ -315,6 +335,8 @@ let bossSpeech = { text: "", timer: 0 };
 let cutsceneActive = false;
 let cutsceneDismissible = false;
 let firstBossCutsceneShown = false;
+let currentCutscene = null; // 'firstBoss' | 'butt'
+let buttCutsceneShown = false;
 
 // Kosmiczne dupy
 const butts = [];
@@ -322,6 +344,10 @@ const pooShots = [];
 let buttSpawnTimer = 0;
 let buttsEnabled = true;
 const BUTT_TARGET_Y = 140; // wysokość ~Przedwieczny
+
+// A2: limit łącznej liczby dup na etap (żeby nie było "bez końca")
+let buttsSpawnedTotal = 0;
+const BUTTS_TOTAL_CAP = 6; // ustaw wartość: np. 4–8 (6 jest rozsądne na start)
 
 function setBossSpeech(text, duration = 120) {
   bossSpeech.text = text;
@@ -334,6 +360,7 @@ function hideFirstBossCutscene() {
   el.classList.add("hidden");
   cutsceneActive = false;
   cutsceneDismissible = false;
+  currentCutscene = null;
   left = false;
   right = false;
   shooting = false;
@@ -352,11 +379,53 @@ function showFirstBossCutscene() {
   el.classList.remove("hidden");
   cutsceneActive = true;
   cutsceneDismissible = false;
+  currentCutscene = "firstBoss";
   setTimeout(() => {
     if (cutsceneActive) cutsceneDismissible = true;
   }, 2500);
   setTimeout(() => {
     if (cutsceneActive) hideFirstBossCutscene();
+  }, 8000);
+}
+
+
+function hideButtCutscene() {
+  const el = document.getElementById("cutscene-butt");
+  if (!el || !cutsceneActive) return;
+  el.classList.add("hidden");
+  cutsceneActive = false;
+  cutsceneDismissible = false;
+  currentCutscene = null;
+  left = false;
+  right = false;
+  shooting = false;
+}
+
+function showButtCutscene() {
+  const el = document.getElementById("cutscene-butt");
+  if (!el) return;
+
+  // wyczyść ekran z bieżących zagrożeń, żeby cutscenka była czytelna
+  asteroids.length = 0;
+  player.fartParticles = [];
+  player.peeParticles = [];
+  left = false;
+  right = false;
+  shooting = false;
+
+  el.classList.remove("hidden");
+  cutsceneActive = true;
+  cutsceneDismissible = false;
+  currentCutscene = "butt";
+
+  // wyłączenie spacją/enterem możliwe po 3 sekundach
+  setTimeout(() => {
+    if (cutsceneActive && currentCutscene === "butt") cutsceneDismissible = true;
+  }, 3000);
+
+  // auto-zamknięcie po 8 sekundach (jak w pierwszej cutscence)
+  setTimeout(() => {
+    if (cutsceneActive && currentCutscene === "butt") hideButtCutscene();
   }, 8000);
 }
 </script>
@@ -377,15 +446,26 @@ function createAsteroidPoints(size) {
 }
 
 function getDifficultyFactor() {
-  const t = timeScore;
+  // time-based difficulty should not grow forever; freeze at boss2 spawn moment
+  const tRaw = timeScore;
+  const t = (difficultyFreezeTime !== null) ? Math.min(tRaw, difficultyFreezeTime) : tRaw;
   const timeFactor = 1 + t / 60;
   const bossFactor = 1 + bossesDefeated * 0.7;
   return timeFactor * bossFactor;
 }
 
+function getBoss2DifficultyFactor() {
+  const t = BOSS2_DIFF_TIME_SECONDS;
+  const timeFactor = 1 + t / 60;
+  // during boss2 bossesDefeated is 1, but keep formula explicit
+  const bossFactor = 1 + bossesDefeated * 0.7;
+  return timeFactor * bossFactor;
+}
+
 function spawnAsteroid() {
+  if (gameEnded) return;
   if (inBossFight || cutsceneActive) return;
-  const diff = getDifficultyFactor();
+  const diff = (bossPhase === 2) ? getBoss2DifficultyFactor() : getDifficultyFactor();
   const willCurve = Math.random() < Math.min(0.4 + diff * 0.1, 0.9);
   const isSuper = bossesDefeated > 0 && Math.random() < 0.15;
   let size = 40 + Math.random() * 40;
@@ -413,6 +493,9 @@ setInterval(spawnAsteroid, 600);
 
 // ========= HOT DOGS =========
 function spawnHotDog() {
+  if (gameEnded) return;
+  // po zdobyciu stałego lasera małe hot dogi są zbędne
+  if (player.permaLaser) return;
   const baseHotdog = {
     x: Math.random() * (canvas.width - 60) + 30,
     y: -50,
@@ -458,7 +541,8 @@ function handleKey(isDown, e) {
   const key = e.key;
   if (cutsceneActive) {
     if (isDown && (key === " " || key === "Enter") && cutsceneDismissible) {
-      hideFirstBossCutscene();
+      if (currentCutscene === "firstBoss") hideFirstBossCutscene();
+      else if (currentCutscene === "butt") hideButtCutscene();
     }
     e.preventDefault();
     return;
@@ -535,6 +619,18 @@ function createBullet() {
 
 // ========= COSMIC BUTTS =========
 function spawnCosmicButt() {
+  if (gameEnded) return;
+  // A2: globalny limit
+  if (buttsSpawnedTotal >= BUTTS_TOTAL_CAP) return;
+  buttsSpawnedTotal++;
+  // if a new butt spawns, cancel pending boss2 countdown
+  boss2ReadyAt = null;
+  // druga cutscenka: po pojawieniu się pierwszej kosmicznej srającej dupy
+  if (!buttCutsceneShown) {
+    buttCutsceneShown = true;
+    showButtCutscene();
+  }
+
   const size = 80;
   const x = 80 + Math.random() * (canvas.width - 160);
   butts.push({
@@ -904,6 +1000,11 @@ function spawnBoss(phase) {
   bossSpawned = true;
   bossExplosionTimer = 0;
 
+  if (phase === 2) {
+    // freeze difficulty growth at boss2 appearance
+    if (difficultyFreezeTime === null) difficultyFreezeTime = timeScore;
+  }
+
   // przy pojawieniu drugiej formy – dupy odlatują
   if (phase === 2) {
     buttsEnabled = false;
@@ -916,9 +1017,7 @@ function spawnBoss(phase) {
 
   const introPool = langData[currentLang].bossIntro;
   let intro = introPool[Math.floor(Math.random() * introPool.length)];
-  if (phase === 2) {
-    intro += currentLang === "pl" ? " (druga forma!)" : " (second form!)";
-  }
+// brak dopisku o drugiej formie – zgodnie z życzeniem
   setBossSpeech(intro, 180);
 }
 
@@ -961,7 +1060,7 @@ function updateBoss() {
           x: boss.x,
           y: boss.y + boss.size * 0.5,
           size,
-          speed: 6 + diff + Math.abs(k),
+          speed: (6 + diff + Math.abs(k)) * BOSS2_ASTEROID_SPEED_MULT,
           points: createAsteroidPoints(size),
           angle: 0,
           rotationSpeed: (Math.random() - 0.5) * 0.05,
@@ -1016,7 +1115,33 @@ function drawFireButton() {
   ctx.restore();
 }
 
-// ========= MAIN UPDATE LOOP =========
+// ========= END GAME =========
+function endGame() {
+  if (gameEnded) return;
+  gameEnded = true;
+
+  const title = (currentLang === "pl") ? "Pokonałeś Przedwiecznego!" : "You defeated the Ancient One!";
+  const summary = (currentLang === "pl")
+    ? `Czas gry: ${Math.floor(timeScore)} s | Zestrzelone meteoryty: ${asteroidKills}`
+    : `Time: ${Math.floor(timeScore)} s | Asteroids destroyed: ${asteroidKills}`;
+
+  const chapter2 = (currentLang === "pl")
+    ? "Rozdział 2: Podniebne Latające Cycki wkrótce"
+    : "Chapter 2: Skyborne Flying Boobs coming soon";
+
+  const overlay = document.getElementById("victory-overlay");
+  if (overlay) {
+    overlay.style.display = "flex";
+  }
+  const h1 = document.getElementById("victory-title");
+  const sumEl = document.getElementById("victory-summary");
+  const chapEl = document.getElementById("victory-next");
+  if (h1) h1.textContent = title;
+  if (sumEl) sumEl.textContent = summary;
+  if (chapEl) chapEl.textContent = chapter2;
+}
+
+ // ========= MAIN UPDATE LOOP =========
 function update() {
   ctx.clearRect(0, 0, canvas.width, canvas.height);
   if (cutsceneActive) {
@@ -1028,8 +1153,18 @@ function update() {
   if (!bossSpawned && bossesDefeated === 0 && timeScore > 45) {
     spawnBoss(1);
   }
-  if (!bossSpawned && bossesDefeated === 1 && timeScore > 120) {
+
+  // boss2 spawn: 8 seconds after the last cosmic butt is destroyed (post boss1)
+  if (
+    !bossSpawned &&
+    bossesDefeated === 1 &&
+    boss2ReadyAt !== null &&
+    timeScore >= boss2ReadyAt
+  ) {
     spawnBoss(2);
+    boss2Spawned = true;
+    // freeze time-based difficulty growth exactly at boss2 appearance
+    if (difficultyFreezeTime === null) difficultyFreezeTime = timeScore;
   }
 
   // cutscene after first boss
@@ -1074,6 +1209,7 @@ function update() {
   // bullets
   for (let i = bullets.length - 1; i >= 0; i--) {
     const b = bullets[i];
+    let bulletRemoved = false;
     b.y -= 8;
     ctx.fillStyle = "lime";
     ctx.fillRect(b.x - b.width / 2, b.y, b.width, b.height);
@@ -1091,6 +1227,8 @@ function update() {
         asteroidKills += a.scoreValue || 1;
         asteroids.splice(j, 1);
         bullets.splice(i, 1);
+        bulletRemoved = true;
+        bulletRemoved = true;
         break;
       }
     }
@@ -1103,11 +1241,22 @@ function update() {
       if (distB < butt.size * 0.6) {
         butt.hp = (butt.hp || 3) - 1;
         bullets.splice(i, 1);
+        bulletRemoved = true;
         if (butt.hp <= 0) {
-          const exiting = butt.state === "exiting";
           butts.splice(k, 1);
-          if (buttsEnabled && !exiting) {
-            spawnCosmicButt(); // nowa dupa po zestrzeleniu
+          // A2: brak natychmiastowego respawnu. Spawn kontroluje timer + limit.
+
+          // Boss2 scheduling: start 8s countdown after the LAST butt is destroyed
+          // (only after boss1, and only when no more butts may spawn).
+          if (
+            bossesDefeated === 1 &&
+            !inBossFight &&
+            !bossSpawned &&
+            !boss2Spawned &&
+            butts.length === 0 &&
+            buttsSpawnedTotal >= BUTTS_TOTAL_CAP
+          ) {
+            boss2ReadyAt = timeScore + 8;
           }
         }
         break;
@@ -1120,12 +1269,23 @@ function update() {
       const dist = Math.sqrt(dx*dx + dy*dy);
       if (dist < boss.size * 0.7) {
         bullets.splice(i, 1);
+        bulletRemoved = true;
         bossHP--;
         const pool = langData[currentLang].bossHit;
         const phrase = pool[Math.floor(Math.random() * pool.length)];
         setBossSpeech(phrase, 150);
         if (bossHP <= 0) {
           bossesDefeated++;
+          if (bossesDefeated === 2) {
+            endGame();
+            return;
+          }
+          if (bossesDefeated === 1) {
+            buttsSpawnedTotal = 0; // start etapu z dupami od zera
+            boss2ReadyAt = null;
+            boss2Spawned = false;
+            difficultyFreezeTime = null;
+          }
           inBossFight = false;
           bossSpawned = false;
           bossExplosionTimer = 60;
@@ -1140,6 +1300,24 @@ function update() {
         }
       }
     }
+
+    // A1: bullets vs poo shots (laser zestrzeliwuje "kupę")
+    if (!bulletRemoved) {
+      for (let p = pooShots.length - 1; p >= 0; p--) {
+        const ps = pooShots[p];
+        const dxP = ps.x - b.x;
+        const dyP = ps.y - b.y;
+        const distP = Math.sqrt(dxP * dxP + dyP * dyP);
+        // 10 to przybliżony "promień" pocisku laserowego
+        if (distP < ps.size + 10) {
+          pooShots.splice(p, 1);
+          bullets.splice(i, 1);
+          bulletRemoved = true;
+          break;
+        }
+      }
+    }
+
   }
 
   // butt spawning (max 2) – tylko gdy gracz ma laser i nie ma drugiej formy
