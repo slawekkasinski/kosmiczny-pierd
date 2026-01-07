@@ -117,6 +117,7 @@
 
 <canvas id="game"></canvas>
 
+<div id="cutscene-third" class="cutscene hidden"><img src="podniebne_cycki.png" alt="third" /></div>
 <div id="victory-overlay" style="display:none; position:fixed; inset:0; z-index:40; background:rgba(0,0,0,0.92); align-items:center; justify-content:center; font-family: Arial, sans-serif;">
   <div style="background:rgba(10,10,30,0.95); padding:24px 32px; border-radius:16px; text-align:center; color:#ffffff; max-width:90%; box-shadow:0 0 20px rgba(0,0,0,0.7);">
     <h1 id="victory-title" style="margin:0 0 12px; font-size:28px;">Pokonałeś Przedwiecznego!</h1>
@@ -428,6 +429,53 @@ function showButtCutscene() {
     if (cutsceneActive && currentCutscene === "butt") hideButtCutscene();
   }, 8000);
 }
+
+function hideThirdCutscene() {
+  const el = document.getElementById("cutscene-third");
+  if (!el || !cutsceneActive) return;
+  el.classList.add("hidden");
+  cutsceneActive = false;
+  cutsceneDismissible = false;
+  currentCutscene = null;
+  left = false;
+  right = false;
+  shooting = false;
+  // after the cutscene, show victory screen
+  endGame();
+}
+
+function showThirdCutscene() {
+  const el = document.getElementById("cutscene-third");
+  if (!el) { endGame(); return; }
+
+  // wyczyść ekran z bieżących obiektów, żeby cutscenka była czytelna
+  asteroids.length = 0;
+  hotdogs.length = 0;
+  player.fartParticles = [];
+  player.peeParticles = [];
+  bullets.length = 0;
+  pooShots.length = 0;
+
+  left = false;
+  right = false;
+  shooting = false;
+
+  el.classList.remove("hidden");
+  cutsceneActive = true;
+  cutsceneDismissible = false;
+  currentCutscene = "third";
+
+  // wyłączenie spacją/enterem możliwe po 3 sekundach
+  setTimeout(() => {
+    if (cutsceneActive && currentCutscene === "third") cutsceneDismissible = true;
+  }, 3000);
+
+  // auto-zamknięcie po 8 sekundach
+  setTimeout(() => {
+    if (cutsceneActive && currentCutscene === "third") hideThirdCutscene();
+  }, 8000);
+}
+
 </script>
 
 <script>
@@ -543,6 +591,7 @@ function handleKey(isDown, e) {
     if (isDown && (key === " " || key === "Enter") && cutsceneDismissible) {
       if (currentCutscene === "firstBoss") hideFirstBossCutscene();
       else if (currentCutscene === "butt") hideButtCutscene();
+      else if (currentCutscene === "third") hideThirdCutscene();
     }
     e.preventDefault();
     return;
@@ -843,20 +892,26 @@ function drawBoss() {
   if (!boss || bossHP <= 0) return;
   ctx.save();
   ctx.translate(boss.x, boss.y);
-  // tentacles
+  // tentacles (should hang downward; sway opposite to boss movement)
+  // Requirement: when boss flies left -> tentacles wave right; when boss flies right -> tentacles wave left
+  const lateralBias = (boss.direction ? -boss.direction : 0) * 26; // left movement (-1) => +26 (right), right movement (+1) => -26 (left)
   for (let i = 0; i < 7; i++) {
-    const angle = -Math.PI / 2 + (i / 6) * Math.PI;
-    const sway = Math.sin(bossAnimPhase * 1.5 + i) * 18;
+    const t = (i - 3) / 3; // -1..+1
+    const startX = t * boss.size * 0.28;
+    const startY = boss.size * 0.35;
+
+    const wobble = Math.sin(bossAnimPhase * 1.6 + i) * 12;
+    const endX = startX + lateralBias + wobble * 0.7;
+    const endY = boss.size * 2.05 + Math.cos(bossAnimPhase * 1.1 + i) * 10;
+
+    const ctrlX = startX + lateralBias * 0.75 + wobble;
+    const ctrlY = boss.size * 1.1;
+
     ctx.strokeStyle = "#442244";
     ctx.lineWidth = 8;
     ctx.beginPath();
-    ctx.moveTo(0, boss.size * 0.4);
-    ctx.quadraticCurveTo(
-      sway,
-      boss.size * 0.9,
-      Math.cos(angle) * boss.size * 1.2,
-      Math.sin(angle) * boss.size * 1.8
-    );
+    ctx.moveTo(startX, startY);
+    ctx.quadraticCurveTo(ctrlX, ctrlY, endX, endY);
     ctx.stroke();
   }
   const gradient = ctx.createRadialGradient(
@@ -1277,7 +1332,8 @@ function update() {
         if (bossHP <= 0) {
           bossesDefeated++;
           if (bossesDefeated === 2) {
-            endGame();
+            // final cutscene before victory screen
+            showThirdCutscene();
             return;
           }
           if (bossesDefeated === 1) {
@@ -1430,6 +1486,14 @@ function update() {
     const h = hotdogs[i];
     h.y += h.speed;
     drawHotDog(h);
+
+    // label above regular hot-dog (like Mega Hot-Dog)
+    ctx.save();
+    ctx.font = "18px Arial";
+    ctx.fillStyle = "#ffffff";
+    ctx.textAlign = "center";
+    ctx.fillText("Hot-Dog", h.x, h.y - h.size);
+    ctx.restore();
     const dx = h.x - player.x;
     const dy = h.y - player.y;
     const dist = Math.sqrt(dx*dx + dy*dy);
