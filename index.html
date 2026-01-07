@@ -264,6 +264,26 @@ const langData = {
   }
 };
 
+
+// ========== BACKGROUND MUSIC ==========
+const backgroundMusic = new Audio("podklad_kosmos.mp3");
+backgroundMusic.loop = true;
+backgroundMusic.volume = 0.35; // 0.0–1.0
+
+let backgroundMusicStarted = false;
+function startBackgroundMusic() {
+  if (backgroundMusicStarted) return;
+  backgroundMusicStarted = true;
+  backgroundMusic.play().catch(() => {});
+}
+
+function stopBackgroundMusic() {
+  try {
+    backgroundMusic.pause();
+    backgroundMusic.currentTime = 0;
+  } catch (_) {}
+}
+
 let currentLang = "pl";
 let gameStarted = false;
 let gameEnded = false;
@@ -278,6 +298,7 @@ function startGame(lang) {
   if (lang) setLanguage(lang);
   const overlay = document.getElementById("lang-overlay");
   if (overlay) overlay.style.display = "none";
+  startBackgroundMusic();
   update();
 }
 
@@ -1175,7 +1196,11 @@ function endGame() {
   if (gameEnded) return;
   gameEnded = true;
 
-  const title = (currentLang === "pl") ? "Pokonałeś Przedwiecznego!" : "You defeated the Ancient One!";
+  
+
+  // stop background music on victory screen
+  stopBackgroundMusic();
+const title = (currentLang === "pl") ? "Pokonałeś Przedwiecznego!" : "You defeated the Ancient One!";
   const summary = (currentLang === "pl")
     ? `Czas gry: ${Math.floor(timeScore)} s | Zestrzelone meteoryty: ${asteroidKills}`
     : `Time: ${Math.floor(timeScore)} s | Asteroids destroyed: ${asteroidKills}`;
@@ -1450,6 +1475,7 @@ function update() {
       alert(ui.gameOverTitle + "\n" +
         ui.gameOverTime + ": " + Math.floor(timeScore) + " s\n" +
         ui.gameOverAst + ": " + asteroidKills);
+      stopBackgroundMusic();
       location.reload();
       return;
     }
@@ -1471,6 +1497,7 @@ function update() {
         ui.gameOverTime + ": " + Math.floor(timeScore) + " s\n" +
         ui.gameOverAst + ": " + asteroidKills
       );
+      stopBackgroundMusic();
       location.reload();
       return;
     }
