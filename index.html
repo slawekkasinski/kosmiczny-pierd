@@ -393,8 +393,8 @@ function stopBackgroundMusic() {
 // ========== SFX (WEB AUDIO) ==========
 let sfxCtx = null;
 let sfxReady = false;
-let fartBufLeft = null;   // pierd1.mp3
-let fartBufRight = null;  // pierd2.mp3
+let fartBufLeft = null;   // pierd1.wav
+let fartBufRight = null;  // pierd2.wav
 let sfxMasterGain = null;
 let sfxInitPromise = null;
 
@@ -415,8 +415,8 @@ function initFartFallbackPool() {
     return a;
   };
   // small pool to allow rapid retrigger without cutting off previous sound
-  fartPoolLeft = [mk("pierd1.mp3"), mk("pierd1.mp3"), mk("pierd1.mp3"), mk("pierd1.mp3")];
-  fartPoolRight = [mk("pierd2.mp3"), mk("pierd2.mp3"), mk("pierd2.mp3"), mk("pierd2.mp3")];
+  fartPoolLeft = [mk("pierd1.wav"), mk("pierd1.wav"), mk("pierd1.wav"), mk("pierd1.wav")];
+  fartPoolRight = [mk("pierd2.wav"), mk("pierd2.wav"), mk("pierd2.wav"), mk("pierd2.wav")];
 }
 
 
@@ -444,8 +444,8 @@ function initSfx() {
       }
 
       const [b1, b2] = await Promise.all([
-        fetch("pierd1.mp3", { cache: "no-store" }).then(r => r.arrayBuffer()),
-        fetch("pierd2.mp3", { cache: "no-store" }).then(r => r.arrayBuffer())
+        fetch("pierd1.wav", { cache: "no-store" }).then(r => r.arrayBuffer()),
+        fetch("pierd2.wav", { cache: "no-store" }).then(r => r.arrayBuffer())
       ]);
 
       fartBufLeft = await sfxCtx.decodeAudioData(b1.slice(0));
@@ -572,17 +572,48 @@ function startGame(lang) {
 }
 
 // ============ CANVAS & GLOBALS ============
+// Virtual (logical) resolution for consistent gameplay across devices.
+// The canvas is rendered in logical units (W x H) and CSS-scaled to fit the screen.
 const canvas = document.getElementById("game");
 const ctx = canvas.getContext("2d");
-canvas.width = window.innerWidth;
-canvas.height = window.innerHeight;
+
+const BASE_W = 1440;
+const BASE_H = 900;
+
+// Logical world size used by all gameplay math
+let W = BASE_W;
+let H = BASE_H;
+
+function resizeCanvas() {
+  const dpr = window.devicePixelRatio || 1;
+
+  // Fit the virtual resolution into the available screen space
+  const scale = Math.min(window.innerWidth / BASE_W, window.innerHeight / BASE_H);
+
+  // Physical backing store (for crisp rendering)
+  canvas.width = Math.floor(BASE_W * dpr);
+  canvas.height = Math.floor(BASE_H * dpr);
+
+  // CSS size (actual on-screen size)
+  canvas.style.width = Math.floor(BASE_W * scale) + "px";
+  canvas.style.height = Math.floor(BASE_H * scale) + "px";
+
+  // Draw in logical pixels
+  ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+
+  // Store scale for input mapping
+  canvas.__uiScale = scale;
+}
+
+window.addEventListener("resize", resizeCanvas);
+resizeCanvas();
 
 let timeScore = 0;
 let asteroidKills = 0;
 
 const player = {
-  x: canvas.width / 2,
-  y: canvas.height - 120,
+  x: W / 2,
+  y: H - 120,
   size: 40,
   vx: 0,
   speed: 6,
@@ -812,7 +843,7 @@ function spawnAsteroid() {
   const speedBase = 4 + Math.random() * 4;
   const speed = speedBase * (1 + 0.15 * diff);
   asteroids.push({
-    x: Math.random() * canvas.width,
+    x: Math.random() * W,
     y: -50,
     size,
     speed,
@@ -831,7 +862,7 @@ function spawnHotDog() {
   // po zdobyciu stałego lasera małe hot dogi są zbędne
   if (player.permaLaser) return;
   const baseHotdog = {
-    x: Math.random() * (canvas.width - 60) + 30,
+    x: Math.random() * (W - 60) + 30,
     y: -50,
     size: 30,
     speed: 3
@@ -840,7 +871,7 @@ function spawnHotDog() {
   if (inBossFight) {
     hotdogs.push({
       ...baseHotdog,
-      x: Math.random() * (canvas.width - 60) + 30
+      x: Math.random() * (W - 60) + 30
     });
   }
 }
@@ -904,8 +935,8 @@ document.addEventListener("keyup", e => handleKey(false, e));
 
 function isFireButtonHit(x, y) {
   const r = 40;
-  const fx = canvas.width - 80;
-  const fy = canvas.height - 80;
+  const fx = W - 80;
+  const fy = H - 80;
   const dx = x - fx;
   const dy = y - fy;
   return dx * dx + dy * dy <= r * r;
@@ -913,8 +944,8 @@ function isFireButtonHit(x, y) {
 
 canvas.addEventListener("pointerdown", e => {
   const rect = canvas.getBoundingClientRect();
-  const x = e.clientX - rect.left;
-  const y = e.clientY - rect.top;
+  const x = (e.clientX - rect.left) * (W / rect.width);
+  const y = (e.clientY - rect.top) * (H / rect.height);
   if (player.hasLaserGun && isFireButtonHit(x, y)) {
     if (!shooting) {
       shooting = true;
@@ -922,7 +953,7 @@ canvas.addEventListener("pointerdown", e => {
     }
     return;
   }
-  if (x < canvas.width / 2) {
+  if (x < W / 2) {
     if (!left) { initSfx(); playFartSfx("left"); }
     left = true;
     right = false;
@@ -969,7 +1000,7 @@ function spawnCosmicButt() {
   }
 
   const size = 80;
-  const x = 80 + Math.random() * (canvas.width - 160);
+  const x = 80 + Math.random() * (W - 160);
   butts.push({
     x,
     y: -size,
@@ -1270,12 +1301,12 @@ function drawBossSpeech() {
   const boxHeight = textBlockHeight + padding * 2;
   let x = boss.x + boss.size + 30;
   let y = boss.y - boxHeight / 2;
-  if (x + boxWidth > canvas.width - 20) {
+  if (x + boxWidth > W - 20) {
     x = boss.x - boss.size - boxWidth - 30;
   }
   if (y < 20) y = 20;
-  if (y + boxHeight > canvas.height - 20) {
-    y = canvas.height - boxHeight - 20;
+  if (y + boxHeight > H - 20) {
+    y = H - boxHeight - 20;
   }
   ctx.fillStyle = "rgba(20, 0, 40, 1.0)";
   ctx.strokeStyle = "#ff99ff";
@@ -1330,7 +1361,7 @@ function drawBossHealthBar() {
 function spawnBoss(phase) {
   bossPhase = phase;
   boss = {
-    x: canvas.width / 2,
+    x: W / 2,
     y: 140,
     size: phase === 1 ? 80 : 90,
     vx: phase === 1 ? 3.2 : 4.2,
@@ -1354,7 +1385,7 @@ function spawnBoss(phase) {
     for (const b of butts) {
       b.state = "exiting";
       b.vy = -3;
-      b.vx = (b.x < canvas.width / 2 ? -3 : 3);
+      b.vx = (b.x < W / 2 ? -3 : 3);
     }
   }
 
@@ -1372,8 +1403,8 @@ function updateBoss() {
   if (boss.x < margin) {
     boss.x = margin;
     boss.direction = 1;
-  } else if (boss.x > canvas.width - margin) {
-    boss.x = canvas.width - margin;
+  } else if (boss.x > W - margin) {
+    boss.x = W - margin;
     boss.direction = -1;
   }
   boss.shootCooldown--;
@@ -1440,8 +1471,8 @@ function drawBossExplosion() {
 function drawFireButton() {
   if (!player.hasLaserGun && !player.permaLaser) return;
   const r = 50;
-  const fx = canvas.width - 90;
-  const fy = canvas.height - 100;
+  const fx = W - 90;
+  const fy = H - 100;
   ctx.save();
   ctx.beginPath();
   ctx.arc(fx, fy, r, 0, Math.PI * 2);
@@ -1490,7 +1521,7 @@ const title = (currentLang === "pl") ? "Pokonałeś Przedwiecznego!" : "You defe
 
  // ========= MAIN UPDATE LOOP =========
 function update() {
-  ctx.clearRect(0, 0, canvas.width, canvas.height);
+  ctx.clearRect(0, 0, W, H);
   if (cutsceneActive) {
     requestAnimationFrame(update);
     return;
@@ -1533,7 +1564,7 @@ function update() {
     player.vx = 0;
   }
   player.x += player.vx;
-  player.x = Math.max(player.size, Math.min(canvas.width - player.size, player.x));
+  player.x = Math.max(player.size, Math.min(W - player.size, player.x));
   drawPlayer();
 
   // particles
@@ -1698,8 +1729,8 @@ function update() {
       if (b.x < 60) {
         b.x = 60;
         b.dir = 1;
-      } else if (b.x > canvas.width - 60) {
-        b.x = canvas.width - 60;
+      } else if (b.x > W - 60) {
+        b.x = W - 60;
         b.dir = -1;
       }
       b.shootCooldown--;
@@ -1712,8 +1743,8 @@ function update() {
       b.y += b.vy || -3;
     }
     drawCosmicButt(b);
-    if (b.y < -150 || b.y > canvas.height + 150 ||
-        b.x < -150 || b.x > canvas.width + 150) {
+    if (b.y < -150 || b.y > H + 150 ||
+        b.x < -150 || b.x > W + 150) {
       butts.splice(i, 1);
     }
   }
@@ -1725,8 +1756,8 @@ function update() {
     p.y += p.vy;
     drawPooShot(p);
     if (
-      p.y - p.size > canvas.height + 50 ||
-      p.x < -100 || p.x > canvas.width + 100
+      p.y - p.size > H + 50 ||
+      p.x < -100 || p.x > W + 100
     ) {
       pooShots.splice(i, 1);
       continue;
@@ -1766,9 +1797,9 @@ function update() {
       return;
     }
     drawAsteroid(a);
-    if (a.y > canvas.height + 100 ||
+    if (a.y > H + 100 ||
         a.x < -120 ||
-        a.x > canvas.width + 120)
+        a.x > W + 120)
       asteroids.splice(i, 1);
   }
 
@@ -1793,7 +1824,7 @@ function update() {
       hotdogs.splice(i, 1);
       setTimeout(() => player.hasLaserGun = false, 10000);
     }
-    if (h.y > canvas.height + 100) hotdogs.splice(i, 1);
+    if (h.y > H + 100) hotdogs.splice(i, 1);
   }
 
   // mega hotdog
@@ -1815,7 +1846,7 @@ function update() {
       player.hasLaserGun = true;
       megaHotdog = null;
     }
-    if (megaHotdog && megaHotdog.y > canvas.height + 120) {
+    if (megaHotdog && megaHotdog.y > H + 120) {
       megaHotdog = null;
     }
   }
@@ -1838,7 +1869,7 @@ function update() {
   ctx.textAlign = "left";
   ctx.fillText(`${ui.timeLabel}: ${Math.floor(timeScore)} s`, 20, 80);
   ctx.textAlign = "right";
-  ctx.fillText(`${ui.destroyedLabel}: ${asteroidKills}`, canvas.width - 20, 80);
+  ctx.fillText(`${ui.destroyedLabel}: ${asteroidKills}`, W - 20, 80);
   if (player.hasLaserGun || player.permaLaser) {
     ctx.font = "18px Arial";
     ctx.fillStyle = "lime";
@@ -1848,7 +1879,7 @@ function update() {
           ? "STAŁE SUPER PIERDNIĘCIE LASEROWE! (Spacja/Enter)"
           : "PERMANENT LASER FART! (Space/Enter)")
       : ui.laserMsg;
-    ctx.fillText(msg, canvas.width / 2, canvas.height - 40);
+    ctx.fillText(msg, W / 2, H - 40);
   }
   ctx.font = "20px Arial";
   ctx.fillStyle = "#ffdd88";
