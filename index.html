@@ -11,8 +11,7 @@
   body {
     margin: 0;
     overflow: hidden;
-    background: url("bg_kosmiczny_pierd.png") no-repeat center center fixed;
-    background-size: cover;
+    background: #000000;
   }
   canvas {
     display: block;
@@ -87,6 +86,43 @@
     max-width: 100%;
     max-height: 100%;
   }
+
+  #rotate-overlay {
+    position: fixed;
+    inset: 0;
+    display: none;
+    align-items: center;
+    justify-content: center;
+    background: rgba(0, 0, 0, 0.85);
+    z-index: 50;
+    font-family: Arial, sans-serif;
+  }
+  #rotate-overlay .panel {
+    background: rgba(10, 10, 30, 0.95);
+    padding: 22px 28px;
+    border-radius: 16px;
+    text-align: center;
+    color: #ffffff;
+    max-width: 92%;
+    box-shadow: 0 0 20px rgba(0,0,0,0.7);
+    border: 1px solid rgba(255,255,255,0.15);
+  }
+  #rotate-overlay .panel h2 {
+    margin: 0 0 10px;
+    font-size: 22px;
+    font-weight: 700;
+  }
+  #rotate-overlay .panel p {
+    margin: 8px 0;
+    font-size: 14px;
+    opacity: 0.85;
+    line-height: 1.35;
+  }
+  #rotate-overlay .panel .small {
+    font-size: 12px;
+    opacity: 0.7;
+  }
+
 </style>
 </head>
 <body>
@@ -114,6 +150,15 @@
     <p class="hint">Dotknij lub kliknij przycisk, aby rozpocząć / Tap or click to start.</p>
   </div>
 </div>
+<div id="rotate-overlay">
+  <div class="panel">
+    <h2>Obróć telefon</h2>
+    <p>Ta gra działa w trybie poziomym. Obróć urządzenie, aby rozpocząć / kontynuować.</p>
+    <p class="small">Jeśli po obrocie nic się nie dzieje, dotknij ekranu.</p>
+  </div>
+</div>
+
+
 
 <canvas id="game"></canvas>
 
@@ -550,6 +595,61 @@ let currentLang = "pl";
 let gameStarted = false;
 let gameEnded = false;
 
+// ===== ORIENTATION HANDLING (force landscape on mobile) =====
+let orientationBlocked = false;
+let gameLoopStarted = false;
+
+function isPortrait() {
+  // matchMedia is more reliable on mobile browsers
+  try {
+    if (window.matchMedia) return window.matchMedia("(orientation: portrait)").matches;
+  } catch (_) {}
+  return window.innerHeight > window.innerWidth;
+}
+
+function isProbablyMobile() {
+  const touch = ("ontouchstart" in window) || (navigator.maxTouchPoints || 0) > 0;
+  const smallSide = Math.min(window.innerWidth, window.innerHeight);
+  return touch && smallSide < 900;
+}
+
+function tryLockLandscape() {
+  try {
+    if (screen.orientation && typeof screen.orientation.lock === "function") {
+      // lock() returns a Promise; do not await to stay within the gesture
+      screen.orientation.lock("landscape").catch(() => {});
+    }
+  } catch (_) {}
+}
+
+function updateOrientationState() {
+  const rotate = document.getElementById("rotate-overlay");
+  const mustForceLandscape = isProbablyMobile();
+
+  if (mustForceLandscape && isPortrait()) {
+    orientationBlocked = true;
+    if (rotate) rotate.style.display = "flex";
+  } else {
+    orientationBlocked = false;
+    if (rotate) rotate.style.display = "none";
+    // if user rotated to landscape after selecting language, start the loop
+    if (gameStarted && !gameLoopStarted && !gameEnded) startGameLoop();
+    // on resume, ensure audio context is running
+    if (gameStarted && !gameEnded) {
+      try { if (sfxCtx && sfxCtx.state === "suspended") sfxCtx.resume().catch(() => {}); } catch (_) {}
+    }
+  }
+}
+
+function startGameLoop() {
+  if (gameLoopStarted) return;
+  gameLoopStarted = true;
+  update();
+}
+
+window.addEventListener("resize", updateOrientationState);
+window.addEventListener("orientationchange", updateOrientationState);
+
 function setLanguage(lang) {
   currentLang = lang;
 }
@@ -558,8 +658,12 @@ function startGame(lang) {
   if (gameStarted) return;
   gameStarted = true;
   if (lang) setLanguage(lang);
+
   const overlay = document.getElementById("lang-overlay");
   if (overlay) overlay.style.display = "none";
+
+  // Best-effort: try to request landscape on supported browsers (must be in a user gesture)
+  tryLockLandscape();
 
   // IMPORTANT: start audio within the same user gesture (click/tap on language button)
   ensureAudioGraphForGesture();
@@ -568,7 +672,9 @@ function startGame(lang) {
   // Decode SFX in the background (no need to block game start)
   initSfx();
 
-  update();
+  // Start only when orientation is acceptable (landscape on mobile)
+  updateOrientationState();
+  if (!orientationBlocked) startGameLoop();
 }
 
 // ============ CANVAS & GLOBALS ============
@@ -581,29 +687,42 @@ const BASE_W = 1440;
 const BASE_H = 900;
 
 // Logical world size used by all gameplay math
+let viewScale = 1;
+let viewOffsetX = 0;
+let viewOffsetY = 0;
+let DPR = window.devicePixelRatio || 1;
+
+// Background image drawn inside canvas to hide letterboxing seams
+const bgImg = new Image();
+bgImg.src = "bg_kosmiczny_pierd.png";
+let bgReady = false;
+bgImg.onload = () => { bgReady = true; };
 let W = BASE_W;
 let H = BASE_H;
 
 function resizeCanvas() {
-  const dpr = window.devicePixelRatio || 1;
+  DPR = window.devicePixelRatio || 1;
 
-  // Fit the virtual resolution into the available screen space
-  const scale = Math.min(window.innerWidth / BASE_W, window.innerHeight / BASE_H);
+  // Canvas always fills the viewport in CSS pixels
+  canvas.style.position = "fixed";
+  canvas.style.left = "0";
+  canvas.style.top = "0";
+  canvas.style.width = window.innerWidth + "px";
+  canvas.style.height = window.innerHeight + "px";
 
   // Physical backing store (for crisp rendering)
-  canvas.width = Math.floor(BASE_W * dpr);
-  canvas.height = Math.floor(BASE_H * dpr);
+  canvas.width = Math.floor(window.innerWidth * DPR);
+  canvas.height = Math.floor(window.innerHeight * DPR);
 
-  // CSS size (actual on-screen size)
-  canvas.style.width = Math.floor(BASE_W * scale) + "px";
-  canvas.style.height = Math.floor(BASE_H * scale) + "px";
+  // Virtual game scale (contain) + offsets (letterbox inside canvas)
+  viewScale = Math.min(window.innerWidth / W, window.innerHeight / H);
+  viewOffsetX = (window.innerWidth - W * viewScale) / 2;
+  viewOffsetY = (window.innerHeight - H * viewScale) / 2;
 
-  // Draw in logical pixels
-  ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
-
-  // Store scale for input mapping
-  canvas.__uiScale = scale;
+  // Reset transform to CSS pixel space
+  ctx.setTransform(DPR, 0, 0, DPR, 0, 0);
 }
+
 
 window.addEventListener("resize", resizeCanvas);
 resizeCanvas();
@@ -944,8 +1063,8 @@ function isFireButtonHit(x, y) {
 
 canvas.addEventListener("pointerdown", e => {
   const rect = canvas.getBoundingClientRect();
-  const x = (e.clientX - rect.left) * (W / rect.width);
-  const y = (e.clientY - rect.top) * (H / rect.height);
+    const x = (e.clientX - rect.left - viewOffsetX) / viewScale;
+  const y = (e.clientY - rect.top - viewOffsetY) / viewScale;
   if (player.hasLaserGun && isFireButtonHit(x, y)) {
     if (!shooting) {
       shooting = true;
@@ -1521,8 +1640,37 @@ const title = (currentLang === "pl") ? "Pokonałeś Przedwiecznego!" : "You defe
 
  // ========= MAIN UPDATE LOOP =========
 function update() {
-  ctx.clearRect(0, 0, W, H);
+  // Reset to CSS pixel space
+  ctx.setTransform(DPR, 0, 0, DPR, 0, 0);
+
+  // Clear full viewport
+  ctx.clearRect(0, 0, window.innerWidth, window.innerHeight);
+  if (orientationBlocked) {
+    requestAnimationFrame(update);
+    return;
+  }
+
+
+  // Draw background inside canvas (so letterboxing uses the same art as the game)
+  if (bgReady) {
+    const iw = bgImg.naturalWidth || bgImg.width;
+    const ih = bgImg.naturalHeight || bgImg.height;
+    if (iw && ih) {
+      const s = Math.max(window.innerWidth / iw, window.innerHeight / ih);
+      const dw = iw * s;
+      const dh = ih * s;
+      const dx = (window.innerWidth - dw) / 2;
+      const dy = (window.innerHeight - dh) / 2;
+      ctx.drawImage(bgImg, dx, dy, dw, dh);
+    }
+  }
+
+  // Enter virtual game space
+  ctx.save();
+  ctx.translate(viewOffsetX, viewOffsetY);
+  ctx.scale(viewScale, viewScale);
   if (cutsceneActive) {
+    ctx.restore();
     requestAnimationFrame(update);
     return;
   }
@@ -1654,6 +1802,7 @@ function update() {
           if (bossesDefeated === 2) {
             // final cutscene before victory screen
             showThirdCutscene();
+            ctx.restore();
             return;
           }
           if (bossesDefeated === 1) {
@@ -1772,6 +1921,7 @@ function update() {
         ui.gameOverAst + ": " + asteroidKills);
       stopBackgroundMusic();
       location.reload();
+      ctx.restore();
       return;
     }
   }
@@ -1794,6 +1944,7 @@ function update() {
       );
       stopBackgroundMusic();
       location.reload();
+      ctx.restore();
       return;
     }
     drawAsteroid(a);
@@ -1893,6 +2044,7 @@ function update() {
     drawSpeechBubble();
     speechTimer--;
   }
+  ctx.restore();
 
   requestAnimationFrame(update);
 }
