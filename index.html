@@ -438,8 +438,8 @@ function stopBackgroundMusic() {
 // ========== SFX (WEB AUDIO) ==========
 let sfxCtx = null;
 let sfxReady = false;
-let fartBufLeft = null;   // pierd1.wav
-let fartBufRight = null;  // pierd2.wav
+let fartBufLeft = null;   // pierd1.mp3
+let fartBufRight = null;  // pierd2.mp3
 let sfxMasterGain = null;
 let sfxInitPromise = null;
 
@@ -460,8 +460,8 @@ function initFartFallbackPool() {
     return a;
   };
   // small pool to allow rapid retrigger without cutting off previous sound
-  fartPoolLeft = [mk("pierd1.wav"), mk("pierd1.wav"), mk("pierd1.wav"), mk("pierd1.wav")];
-  fartPoolRight = [mk("pierd2.wav"), mk("pierd2.wav"), mk("pierd2.wav"), mk("pierd2.wav")];
+  fartPoolLeft = [mk("pierd1.mp3"), mk("pierd1.mp3"), mk("pierd1.mp3"), mk("pierd1.mp3")];
+  fartPoolRight = [mk("pierd2.mp3"), mk("pierd2.mp3"), mk("pierd2.mp3"), mk("pierd2.mp3")];
 }
 
 
@@ -489,8 +489,8 @@ function initSfx() {
       }
 
       const [b1, b2] = await Promise.all([
-        fetch("pierd1.wav", { cache: "no-store" }).then(r => r.arrayBuffer()),
-        fetch("pierd2.wav", { cache: "no-store" }).then(r => r.arrayBuffer())
+        fetch("pierd1.mp3", { cache: "no-store" }).then(r => r.arrayBuffer()),
+        fetch("pierd2.mp3", { cache: "no-store" }).then(r => r.arrayBuffer())
       ]);
 
       fartBufLeft = await sfxCtx.decodeAudioData(b1.slice(0));
