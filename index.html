@@ -137,19 +137,17 @@
 // =================== LANGUAGE DATA ===================
 const langData = {
   pl: {
-    peePhrases: [
-      "Trzeba nie było pić tyle Tatry.",
-      "Chyba przeziębiłem pęcherz...",
-      "Następnym razem siku przed startem.",
-      "Czy w tej galaktyce są toalety?",
-      "Z takim pęcherzem NASA by mnie nie wzięła.",
-      "Kto zaprojektował skafander bez zamka?!",
-      "Za dużo coli przed lotem...",
-      "Czy ktoś widział kosmiczny toi-toi?",
-      "Następna misja: tylko w pampersach.",
-      "Tego nie było w symulatorze..."
-    ],
     fartPhrases: [
+      "Ten bigos był kompletnie niepotrzebny.",
+      "Coś mi tu fermentuje w skafandrze.",
+      "Houston, mamy problem trawienny.",
+      "Kto by pomyślał, że kapusta w kosmosie to zły pomysł.",
+      "To nie manewr, to eksplozja jelit.",
+      "Silnik pomocniczy: jelito cienkie.",
+      "Powietrze się kończy… a ja dokładam swoje.",
+      "Ten zapach zostanie tu na wieki.",
+      "Kosmos jeszcze nie widział takiego bąka.",
+      "Grawitacja nie działa, ale jelita owszem.",
       "To nie ja, to grawitacja!",
       "Efekt uboczny hot doga...",
       "Oby nikt tego nie nagrywał.",
@@ -200,19 +198,17 @@ const langData = {
     }
   },
   en: {
-    peePhrases: [
-      "Shouldn't have drunk all that beer...",
-      "My bladder is gonna explode!",
-      "Next time I'm peeing before launch.",
-      "Is there a toilet in this galaxy?",
-      "NASA would never hire this bladder.",
-      "Whose idea was a suit with no zipper?!",
-      "Too much cola before take-off...",
-      "Anyone seen a space porta-potty?",
-      "Next mission: diapers only.",
-      "They never simulated THIS in training..."
-    ],
     fartPhrases: [
+      "That bigos was a terrible idea.",
+      "Something is fermenting in this spacesuit.",
+      "Houston, we have a digestive problem.",
+      "Who knew cabbage and space don't mix?",
+      "This is not a maneuver, it's a gut explosion.",
+      "Auxiliary engine: small intestine.",
+      "Oxygen is low… and I'm making it worse.",
+      "That smell will drift through space forever.",
+      "The cosmos has never known such a fart.",
+      "Zero gravity, full intestinal pressure.",
       "That wasn't a thruster, I swear!",
       "Side effect of that hot dog...",
       "I hope no one recorded that.",
@@ -265,24 +261,290 @@ const langData = {
 };
 
 
-// ========== BACKGROUND MUSIC ==========
-const backgroundMusic = new Audio("podklad_kosmos.mp3");
-backgroundMusic.loop = true;
-backgroundMusic.volume = 0.35; // 0.0–1.0
+// ========== BACKGROUND MUSIC (Web Audio API) ==========
+let musicMode = "none"; // "buffer" | "element" | "none"
+let musicBuffer = null; // AudioBuffer (when mode=="buffer")
+let musicSource = null; // AudioBufferSourceNode
+let musicEl = null;     // HTMLAudioElement (when mode=="element")
+let musicElNode = null; // MediaElementAudioSourceNode
+let musicShouldPlay = false;
+let musicGain = null;
 
-let backgroundMusicStarted = false;
+function ensureAudioGraphForGesture() {
+  const AudioCtx = window.AudioContext || window.webkitAudioContext;
+  if (!AudioCtx) return;
+  // Create context synchronously (must happen inside a user gesture for best autoplay compatibility)
+  if (!sfxCtx) {
+    try { sfxCtx = new AudioCtx({ latencyHint: "interactive" }); } catch (_) { return; }
+  }
+  // Create master gain synchronously
+  if (!sfxMasterGain && sfxCtx) {
+    try {
+      sfxMasterGain = sfxCtx.createGain();
+      sfxMasterGain.gain.value = 0.9;
+      sfxMasterGain.connect(sfxCtx.destination);
+    } catch (_) {}
+  }
+  // Create music element synchronously
+  if (!musicEl) {
+    try {
+      musicEl = new Audio("podklad_kosmos.mp3");
+      musicEl.preload = "auto";
+      musicEl.loop = true;
+      musicEl.volume = 1.0;
+      musicMode = "element";
+    } catch (_) {
+      musicMode = "none";
+    }
+  } else {
+    musicMode = "element";
+  }
+  // Resume context if needed (allowed inside user gesture)
+  try {
+    if (sfxCtx && sfxCtx.state === "suspended") sfxCtx.resume();
+  } catch (_) {}
+}
+
+
+// Music is prepared in initSfx() (same AudioContext for lowest latency).
 function startBackgroundMusic() {
-  if (backgroundMusicStarted) return;
-  backgroundMusicStarted = true;
-  backgroundMusic.play().catch(() => {});
+  if (!sfxCtx) return;
+  musicShouldPlay = true;
+
+  // Ensure the AudioContext is running (user gesture path: startGame)
+  if (sfxCtx.state === "suspended") {
+    sfxCtx.resume().catch(() => {});
+  }
+
+  // Create gain only once
+  if (!musicGain) {
+    musicGain = sfxCtx.createGain();
+    musicGain.gain.value = 0.35; // matches prior HTMLAudio volume
+    // Route through SFX master gain if present (single output chain)
+    musicGain.connect(sfxMasterGain || sfxCtx.destination);
+  }
+
+  // --- Mode: decoded AudioBuffer (best case) ---
+  if (musicMode === "buffer" && musicBuffer) {
+    if (musicSource) return; // already playing
+    try {
+      musicSource = sfxCtx.createBufferSource();
+      musicSource.buffer = musicBuffer;
+      musicSource.loop = true;
+      // explicit loop region for compatibility
+      try {
+        musicSource.loopStart = 0;
+        musicSource.loopEnd = musicBuffer.duration;
+      } catch (_) {}
+
+      // safety-net: if looping fails for any reason, restart
+      musicSource.onended = () => {
+        musicSource = null;
+        if (musicShouldPlay) startBackgroundMusic();
+      };
+
+      musicSource.connect(musicGain);
+
+      // schedule slightly ahead to reduce perceived start lag
+      const t0 = (sfxCtx.currentTime || 0) + 0.005;
+      musicSource.start(t0);
+    } catch (_) {}
+    return;
+  }
+
+  // --- Mode: HTMLAudio routed into WebAudio (robust for file://) ---
+  if (musicMode === "element" && musicEl) {
+    try {
+      if (!musicElNode) {
+        // MediaElementSource can be created only once per element
+        musicElNode = sfxCtx.createMediaElementSource(musicEl);
+        musicElNode.connect(musicGain);
+      }
+      // Ensure loop at element-level (extra safety)
+      musicEl.loop = true;
+      const playPromise = musicEl.play();
+      if (playPromise && typeof playPromise.catch === "function") {
+        playPromise.catch(() => {});
+      }
+    } catch (_) {}
+  }
 }
 
 function stopBackgroundMusic() {
+  musicShouldPlay = false;
+  // Stop buffer-source music
   try {
-    backgroundMusic.pause();
-    backgroundMusic.currentTime = 0;
+    if (musicSource) {
+      musicSource.stop();
+      musicSource.disconnect();
+    }
+  } catch (_) {}
+  musicSource = null;
+
+  // Stop element music
+  try {
+    if (musicEl) {
+      musicEl.pause();
+      musicEl.currentTime = 0;
+    }
   } catch (_) {}
 }
+
+// ========== SFX (WEB AUDIO) ==========
+let sfxCtx = null;
+let sfxReady = false;
+let fartBufLeft = null;   // pierd1.mp3
+let fartBufRight = null;  // pierd2.mp3
+let sfxMasterGain = null;
+let sfxInitPromise = null;
+
+// Prevent overlapping fart SFX: a new one won't start until the previous ends
+let fartSfxPlaying = false;
+
+// Fallback (for file:// or when fetch/decode is blocked): small HTMLAudio pool
+let fartPoolLeft = [];
+let fartPoolRight = [];
+let fartPoolIdxLeft = 0;
+let fartPoolIdxRight = 0;
+function initFartFallbackPool() {
+  if (fartPoolLeft.length || fartPoolRight.length) return;
+  const mk = (src) => {
+    const a = new Audio(src);
+    a.preload = "auto";
+    a.volume = 0.9;
+    return a;
+  };
+  // small pool to allow rapid retrigger without cutting off previous sound
+  fartPoolLeft = [mk("pierd1.mp3"), mk("pierd1.mp3"), mk("pierd1.mp3"), mk("pierd1.mp3")];
+  fartPoolRight = [mk("pierd2.mp3"), mk("pierd2.mp3"), mk("pierd2.mp3"), mk("pierd2.mp3")];
+}
+
+
+function initSfx() {
+  if (sfxInitPromise) return sfxInitPromise;
+  sfxInitPromise = (async () => {
+    if (sfxReady) return;
+    try {
+      const AudioCtx = window.AudioContext || window.webkitAudioContext;
+      if (!AudioCtx) throw new Error("No AudioContext");
+
+      // latencyHint improves responsiveness on many browsers
+      sfxCtx = sfxCtx || new AudioCtx({ latencyHint: "interactive" });
+
+      // Some browsers start AudioContext suspended until a user gesture.
+      if (sfxCtx.state === "suspended") {
+        try { await sfxCtx.resume(); } catch (_) {}
+      }
+
+      // Create a single master gain node (avoid per-play allocations)
+      if (!sfxMasterGain) {
+        sfxMasterGain = sfxCtx.createGain();
+        sfxMasterGain.gain.value = 0.9;
+        sfxMasterGain.connect(sfxCtx.destination);
+      }
+
+      const [b1, b2] = await Promise.all([
+        fetch("pierd1.mp3", { cache: "no-store" }).then(r => r.arrayBuffer()),
+        fetch("pierd2.mp3", { cache: "no-store" }).then(r => r.arrayBuffer())
+      ]);
+
+      fartBufLeft = await sfxCtx.decodeAudioData(b1.slice(0));
+      fartBufRight = await sfxCtx.decodeAudioData(b2.slice(0));
+
+      // Background music (MP3) — use HTMLAudio routed into WebAudio for maximum
+      // compatibility and to ensure playback can start within the user gesture.
+      // This still runs through Web Audio API (MediaElementSourceNode + GainNode).
+      try {
+        if (!musicEl) {
+          musicEl = new Audio("podklad_kosmos.mp3");
+          musicEl.preload = "auto";
+          musicEl.loop = true;
+          // volume is controlled via WebAudio gain node
+          musicEl.volume = 1.0;
+        }
+        musicMode = "element";
+      } catch (_) {
+        musicMode = "none";
+      }
+
+      // Warm-up: schedule a silent, 1-sample play to reduce first-play latency.
+      try {
+        const warm = sfxCtx.createBufferSource();
+        warm.buffer = fartBufLeft;
+        const g = sfxCtx.createGain();
+        g.gain.value = 0.0001;
+        warm.connect(g);
+        g.connect(sfxCtx.destination);
+        warm.start(sfxCtx.currentTime + 0.001);
+        warm.stop(sfxCtx.currentTime + 0.01);
+      } catch (_) {}
+
+      sfxReady = true;
+    } catch (_) {
+      // If WebAudio fails (e.g., file:// fetch blocked), fall back to HTMLAudio.
+      sfxReady = false;
+      initFartFallbackPool();
+    }
+  })();
+  return sfxInitPromise;
+}
+
+function playFartSfx(dir) {
+  // Do not overlap: if a fart SFX is already playing, ignore new triggers.
+  if (fartSfxPlaying) return;
+
+  // Prefer WebAudio (low-latency). If unavailable, use HTMLAudio fallback.
+  if (!sfxCtx || !sfxMasterGain) { playFartFallback(dir); return; }
+  if (sfxCtx.state === "suspended") {
+    sfxCtx.resume().catch(() => {});
+  }
+  const buf = (dir === "left") ? fartBufLeft : fartBufRight;
+  if (!buf) { playFartFallback(dir); return; }
+
+  const src = sfxCtx.createBufferSource();
+  src.buffer = buf;
+
+  // one-shot: connect to master gain, start slightly ahead for tighter scheduling
+  src.connect(sfxMasterGain);
+
+  fartSfxPlaying = true;
+  src.onended = () => { fartSfxPlaying = false; };
+
+  try { src.start(sfxCtx.currentTime + 0.005); } catch (_) { fartSfxPlaying = false; }
+}
+
+
+// Keep ONLY one implementation (no accidental overrides)
+function playFartFallback(dir) {
+  // Do not overlap: if a fart SFX is already playing, ignore new triggers.
+  if (fartSfxPlaying) return;
+
+  initFartFallbackPool();
+  const pool = (dir === "left") ? fartPoolLeft : fartPoolRight;
+  if (!pool.length) return;
+
+  // With "no overlap" policy, we can just use a single instance per side,
+  // but keep the existing pool as a fallback for browsers that mis-handle 'ended'.
+  let idx = (dir === "left") ? fartPoolIdxLeft : fartPoolIdxRight;
+  const a = pool[idx % pool.length];
+  idx = (idx + 1) % pool.length;
+  if (dir === "left") fartPoolIdxLeft = idx; else fartPoolIdxRight = idx;
+
+  fartSfxPlaying = true;
+
+  const reset = () => {
+    fartSfxPlaying = false;
+    a.removeEventListener("ended", reset);
+  };
+  a.addEventListener("ended", reset);
+
+  try {
+    a.currentTime = 0;
+    a.play().catch(() => { reset(); });
+  } catch (_) { reset(); }
+}
+
+
 
 let currentLang = "pl";
 let gameStarted = false;
@@ -298,7 +560,14 @@ function startGame(lang) {
   if (lang) setLanguage(lang);
   const overlay = document.getElementById("lang-overlay");
   if (overlay) overlay.style.display = "none";
+
+  // IMPORTANT: start audio within the same user gesture (click/tap on language button)
+  ensureAudioGraphForGesture();
   startBackgroundMusic();
+
+  // Decode SFX in the background (no need to block game start)
+  initSfx();
+
   update();
 }
 
@@ -318,7 +587,6 @@ const player = {
   vx: 0,
   speed: 6,
   fartParticles: [],
-  peeParticles: [],
   hasLaserGun: false,
   permaLaser: false
 };
@@ -394,7 +662,6 @@ function showFirstBossCutscene() {
   asteroids.length = 0;
   hotdogs.length = 0;
   player.fartParticles = [];
-  player.peeParticles = [];
   left = false;
   right = false;
   shooting = false;
@@ -430,7 +697,6 @@ function showButtCutscene() {
   // wyczyść ekran z bieżących zagrożeń, żeby cutscenka była czytelna
   asteroids.length = 0;
   player.fartParticles = [];
-  player.peeParticles = [];
   left = false;
   right = false;
   shooting = false;
@@ -473,7 +739,6 @@ function showThirdCutscene() {
   asteroids.length = 0;
   hotdogs.length = 0;
   player.fartParticles = [];
-  player.peeParticles = [];
   bullets.length = 0;
   pooShots.length = 0;
 
@@ -587,17 +852,13 @@ function spawnMegaHotDog(x, y) {
 setInterval(spawnHotDog, 15000);
 
 // ========= PARTICLES & SPEECH =========
-function createParticle(type) {
-  const list = type === "fart" ? player.fartParticles : player.peeParticles;
-  list.push({ x: player.x, y: player.y + 10, alpha: 1 });
+function createParticle() {
+  player.fartParticles.push({ x: player.x, y: player.y + 10, alpha: 1 });
 }
 
-function triggerSpeech(kind) {
+function triggerSpeech() {
   if (speechTimer > 0) return;
-  let pool;
-  if (kind === "pee") pool = langData[currentLang].peePhrases;
-  else if (kind === "fart") pool = langData[currentLang].fartPhrases;
-  else return;
+  const pool = langData[currentLang].fartPhrases;
   const phrase = pool[Math.floor(Math.random() * pool.length)];
   speech.text = phrase;
   speech.xOffset = -60 + Math.random() * 120;
@@ -618,10 +879,14 @@ function handleKey(isDown, e) {
     return;
   }
   if (key === "ArrowLeft" || key === "a" || key === "A") {
+    // one-shot SFX on press
+    if (isDown && !left) { initSfx(); playFartSfx("left"); }
     left = isDown;
     e.preventDefault();
   }
   if (key === "ArrowRight" || key === "d" || key === "D") {
+    // one-shot SFX on press
+    if (isDown && !right) { initSfx(); playFartSfx("right"); }
     right = isDown;
     e.preventDefault();
   }
@@ -658,9 +923,11 @@ canvas.addEventListener("pointerdown", e => {
     return;
   }
   if (x < canvas.width / 2) {
+    if (!left) { initSfx(); playFartSfx("left"); }
     left = true;
     right = false;
   } else {
+    if (!right) { initSfx(); playFartSfx("right"); }
     right = true;
     left = false;
   }
@@ -1256,12 +1523,12 @@ function update() {
   // player movement
   if (left) {
     player.vx = -player.speed;
-    createParticle("fart");
-    triggerSpeech("fart");
+    createParticle();
+    triggerSpeech();
   } else if (right) {
     player.vx = player.speed;
-    createParticle("pee");
-    triggerSpeech("pee");
+    createParticle();
+    triggerSpeech();
   } else {
     player.vx = 0;
   }
@@ -1270,21 +1537,18 @@ function update() {
   drawPlayer();
 
   // particles
-  [player.fartParticles, player.peeParticles].forEach((particles, index) => {
-    const color = index === 0 ? "rgba(0,255,0" : "rgba(255,255,0";
-    for (let i = particles.length - 1; i >= 0; i--) {
-      const p = particles[i];
-      p.y += 2;
-      p.alpha -= 0.02;
-      if (p.alpha <= 0) particles.splice(i, 1);
-      else {
-        ctx.fillStyle = `${color},${p.alpha})`;
-        ctx.beginPath();
-        ctx.arc(p.x, p.y, 10, 0, Math.PI * 2);
-        ctx.fill();
-      }
+  for (let i = player.fartParticles.length - 1; i >= 0; i--) {
+    const p = player.fartParticles[i];
+    p.y += 2;
+    p.alpha -= 0.02;
+    if (p.alpha <= 0) player.fartParticles.splice(i, 1);
+    else {
+      ctx.fillStyle = `rgba(0,255,0,${p.alpha})`;
+      ctx.beginPath();
+      ctx.arc(p.x, p.y, 10, 0, Math.PI * 2);
+      ctx.fill();
     }
-  });
+  }
 
   // bullets
   for (let i = bullets.length - 1; i >= 0; i--) {
